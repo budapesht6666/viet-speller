@@ -7,8 +7,8 @@
 Интерфейс на русском. Приложение открывается в браузере телефона и ставится
 на домашний экран.
 
-> Статус: проект только начат. Готовы план и правила работы — `PLAN.md`
-> и `CLAUDE.md`. Кода пока нет.
+> Статус: готов каркас (этап 1 в `PLAN.md`) и проба распознавания
+> вьетнамского (этап 0). Уроков пока нет: они ждут замера на телефоне.
 
 ## Как устроено обучение
 
@@ -62,4 +62,46 @@
 
 ## Разработка
 
-Появится вместе с каркасом (этап 1 в `PLAN.md`).
+Нужен Node 24.15 или новее (`.nvmrc`) и Python-пакет `edge-tts` для озвучки.
+
+```powershell
+npm install
+copy apps\api\.env.example apps\api\.env
+
+npm run dev        # клиент на http://localhost:5180
+npm run dev:api    # сервер на http://localhost:3000, клиент ходит к нему через прокси
+npm test           # все тесты; их же запускает pre-commit
+npm run build      # пакеты, клиент, сервер
+```
+
+Собранный сервер раздаёт и клиент: `npm run build`, затем
+`node dist/main.js` в `apps/api` — приложение на http://localhost:3000.
+
+Стенд дизайн-системы — `/design-system.html`.
+
+### На телефоне
+
+Распознаванию нужен https, поэтому дев-сервер выставляется наружу туннелем:
+
+```powershell
+npm run dev
+npm run tunnel     # выдаст https://….trycloudflare.com
+```
+
+Адрес туннеля после перезапуска меняется, и ярлык на домашнем экране
+приходится ставить заново.
+
+### Замер распознавания (этап 0)
+
+```powershell
+npm run probe          # проба на http://localhost:5174/vi-probe.html
+npm run tunnel:probe
+```
+
+Протокол — [research/VI-PROBE-CHECKLIST.md](research/VI-PROBE-CHECKLIST.md).
+
+### Озвучка и иконки
+
+Файлы коммитятся, заново их обычно генерировать не нужно.
+`npm run tts:probe` — образцы для пробы (edge-tts), `npm run assets` — иконки
+Streamline, `npm run icons -w @viet/web` — иконки PWA из `icon.svg`.

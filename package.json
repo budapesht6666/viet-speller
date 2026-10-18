@@ -2,18 +2,43 @@
   "name": "viet-speller",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/core",
+    "packages/content",
+    "apps/web",
+    "apps/api"
+  ],
   "engines": {
-    "node": ">=24"
+    "node": ">=24.15"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
+    "dev": "npm run dev -w @viet/web",
+    "dev:api": "npm run build:packages && npm run start:dev -w @viet/api",
+    "build:packages": "npm run build -w @viet/core && npm run build -w @viet/content && npm run generate -w @viet/api",
+    "build": "npm run build:packages && npm run build -w @viet/web && npm run build -w @viet/api",
+    "typecheck": "npm run typecheck -w @viet/core && npm run typecheck -w @viet/content && npm run typecheck -w @viet/web",
+    "test": "npm run build:packages && vitest run && npm run test:probe",
+    "test:watch": "vitest",
+    "tunnel": "cloudflared tunnel --url http://localhost:5180",
     "probe": "vite --config research/vite.config.mjs",
     "tunnel:probe": "cloudflared tunnel --url http://localhost:5174",
     "tts:probe": "node scripts/tts.mjs --from research/vi-probe-prompts.json --out research/audio",
-    "test:probe": "node --test research/vi-probe-verdict.test.mjs"
+    "test:probe": "node --test research/vi-probe-verdict.test.mjs",
+    "assets": "node scripts/fetch-assets.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
+    "@types/node": "^24.19.2",
     "cloudflared": "^0.7.3",
-    "vite": "^8.3.4"
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true,
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true,
+    "cloudflared@0.7.3": true
   }
 }

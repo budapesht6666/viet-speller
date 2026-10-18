@@ -1,0 +1,29 @@
+/* Раскладка экранов. Только раскладка: внешний вид — в примитивах base.css. */
+
+.home {
+  gap: var(--space-8);
+}
+
+.home__hero {
+  padding-top: var(--space-10);
+}
+
+.home__status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.home__status .card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.home__foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: auto;
+  text-align: center;
+}

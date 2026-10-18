@@ -8,7 +8,8 @@ coverage/
 !.env.example
 
 # База разработки
-apps/api/data/
+apps/api/data/*
+!apps/api/data/.gitkeep
 *.db
 *.db-journal
 
@@ -18,3 +19,6 @@ apps/api/data/
 # Playwright
 test-results/
 playwright-report/
+
+# Кеш инкрементальной сборки tsc
+*.tsbuildinfo

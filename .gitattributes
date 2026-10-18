@@ -1,0 +1,7 @@
+# LF везде. Иначе autocrlf превращает pre-commit hook в CRLF, и sh падает на
+# `#!/bin/sh\r` — коммит проходит без тестов или не проходит вовсе.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.mp3 binary
+*.woff2 binary

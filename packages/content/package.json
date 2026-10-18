@@ -1,0 +1,23 @@
+{
+  "name": "@viet/content",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Алфавит, цифры, слова, фразы, темы, ачивки — и тесты, без которых контент не попадает в коммит.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@viet/core": "*"
+  }
+}

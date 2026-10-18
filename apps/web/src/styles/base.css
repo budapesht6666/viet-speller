@@ -1,0 +1,291 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   ПРИМИТИВЫ
+   ─────────────────────────────────────────────────────────────────────────
+   Классы, из которых собраны экраны. Ни одного сырого значения: всё приходит
+   из tokens.css. Каждый примитив показан на /design-system.html.
+   Перенесено из Speller без неба, стекла и падающих предметов.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@import './tokens.css';
+
+/* ── Сброс и корпус ────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  color: var(--c-text);
+  background: var(--c-paper);
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Оболочка приложения. Правила навешены на [data-app], а не на body вообще:
+   этот же файл подключает стенд дизайн-системы — обычную прокручиваемую
+   страницу. Резиновый отскок Safari в standalone выглядит поломкой
+   приложения, поэтому у оболочки его нет. */
+body[data-app] {
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--c-backdrop);
+}
+
+/* Ничто не выделяется по долгому нажатию и не подсвечивается при касании —
+   иначе приложение выдаёт в себе веб-страницу. Поля ввода исключены: там
+   выделение нужно. */
+body[data-app]:not(:has(input:focus)) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ── Экран ─────────────────────────────────────────────────────────────── */
+
+/* Экраны лежат друг на друге: во время перехода видны обе половины, и в
+   обычном потоке страница на долю секунды стала бы вдвое выше.
+
+   Высота — dvh, а не inset: 0. Во вкладке Safari на iOS фиксированный
+   элемент с inset: 0 растягивается без учёта строки адреса, и нижняя кнопка
+   уезжает под панель браузера. Первая строка — запасная для браузеров без
+   dvh. */
+.screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-screen);
+  height: 100%;
+  height: 100dvh;
+  max-width: var(--app-width);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + var(--space-3)) var(--gutter)
+    calc(env(safe-area-inset-bottom) + var(--space-4));
+  background: var(--c-paper);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Без этой строки скрытые экраны видны все сразу: `[hidden]` живёт в стилях
+   браузера, а `.screen { display: flex }` — в авторских, и авторские сильнее
+   всегда. Та же строка продублирована критическим стилем в <head>. */
+.screen[hidden] {
+  display: none;
+}
+
+/* ── Заголовки и текст ─────────────────────────────────────────────────── */
+
+.display {
+  margin: 0;
+  font-size: var(--text-display);
+  font-weight: var(--weight-black);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+}
+
+.h2 {
+  margin: 0;
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.lead {
+  margin: var(--space-3) 0 0;
+  max-width: var(--measure);
+  font-size: var(--text-lead);
+  line-height: var(--leading-normal);
+  color: var(--c-text-muted);
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-micro);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+
+.caption {
+  font-size: var(--text-small);
+  color: var(--c-text-muted);
+}
+
+/* Вьетнамская фраза. Межстрочный запас — под двойные знаки `ễ`, `ặ`. */
+.phrase {
+  margin: 0;
+  font-size: var(--text-phrase);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-phrase);
+  overflow-wrap: anywhere;
+}
+
+.phrase__ru {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-lead);
+  color: var(--c-text-muted);
+}
+
+/* ── Карточка ──────────────────────────────────────────────────────────── */
+
+.card {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.stat__value {
+  font-size: var(--text-stat);
+  font-weight: var(--weight-black);
+  font-variant-numeric: var(--numeric);
+  line-height: var(--leading-snug);
+}
+
+/* ── Кнопки ────────────────────────────────────────────────────────────── */
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-xl);
+  font-size: var(--text-body);
+  font-weight: var(--weight-black);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  transition:
+    transform var(--duration-instant) var(--ease-out),
+    box-shadow var(--duration-instant) var(--ease-out);
+}
+
+.btn--cta {
+  background: linear-gradient(180deg, var(--c-accent-warm) 0%, var(--c-accent) 100%);
+  color: var(--c-accent-ink);
+  box-shadow: var(--shadow-cta);
+}
+
+/* Кнопка проседает на своё же смещение тени: физическое нажатие, а не смена
+   цвета. */
+.btn--cta:active {
+  transform: translateY(2px);
+  box-shadow: var(--shadow-cta-pressed);
+}
+
+/* Гасим, но не прячем: под кнопкой стоит объяснение причины, и кнопка нужна
+   как якорь для него. */
+.btn:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: default;
+}
+
+.btn--quiet {
+  min-height: var(--tap-min);
+  border-radius: var(--radius-pill);
+  background: var(--c-surface);
+  color: var(--c-text-muted);
+  font-weight: var(--weight-semibold);
+  text-transform: none;
+  letter-spacing: var(--tracking-normal);
+}
+
+/* ── Состояние побочного эффекта ───────────────────────────────────────── */
+
+/* У каждого побочного эффекта есть вид: ожидание, отказ, успех. Строка
+   состояния — общий примитив для сети, микрофона и синхронизации, чтобы
+   они не придумывали каждый свой. */
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+  color: var(--c-text-muted);
+}
+
+.status__dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  background: var(--c-text-faint);
+}
+
+.status[data-state='ok'] .status__dot {
+  background: var(--c-success);
+}
+
+.status[data-state='wait'] .status__dot {
+  background: var(--c-almost);
+}
+
+.status[data-state='off'] {
+  color: var(--c-text-faint);
+}
+
+/* Красная точка — только открытый микрофон. */
+.status[data-state='live'] .status__dot {
+  background: var(--c-live);
+}
+
+/* ── Итог шага ─────────────────────────────────────────────────────────── */
+
+.verdict {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-weight: var(--weight-bold);
+}
+
+.verdict[data-result='success'] {
+  background: var(--c-success-wash);
+  color: var(--c-success);
+}
+
+.verdict[data-result='almost'] {
+  background: var(--c-almost-wash);
+  color: var(--c-almost);
+}
+
+.verdict[data-result='miss'] {
+  background: var(--c-miss-wash);
+  color: var(--c-miss);
+}

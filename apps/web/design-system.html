@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Viet Speller — дизайн-система</title>
+    <meta name="theme-color" content="#ffffff" />
+  </head>
+  <body>
+    <main class="ds-page">
+      <h1 class="ds-title">Дизайн-система</h1>
+      <p class="ds-sub" id="ds-count">…</p>
+
+      <p class="ds-note">
+        Образцы ниже построены разбором <code>src/styles/tokens.css</code>, а не отдельным списком.
+        Поэтому стенд не может разъехаться с системой: переименованный токен исчезает отсюда сам,
+        новый появляется сам. Пустой образец означает, что значение перестало быть валидным.
+      </p>
+
+      <!-- Примитивы показаны до таблицы токенов: сначала видно, ради чего
+           система, потом из чего она собрана. -->
+      <section class="ds-section">
+        <h2 class="ds-section__title">Фраза и итог шага</h2>
+        <p class="ds-section__intro">
+          Три исхода шага. «Не засчитано» не красное: красный означает только открытый микрофон.
+        </p>
+        <div class="ds-demo">
+          <div>
+            <p class="phrase">Cho tôi một cà phê sữa đá</p>
+            <p class="phrase__ru">Мне один кофе со сгущёнкой и льдом</p>
+          </div>
+          <div class="verdict" data-result="success">Засчитано</div>
+          <div class="verdict" data-result="almost">Почти: слово верно, тон другой</div>
+          <div class="verdict" data-result="miss">Не засчитано — послушай ещё раз</div>
+        </div>
+      </section>
+
+      <section class="ds-section">
+        <h2 class="ds-section__title">Состояние побочного эффекта</h2>
+        <p class="ds-section__intro">
+          Общий вид для сети, микрофона, синхронизации и обновления. Состояние без вида — это мигание
+          или пустота.
+        </p>
+        <div class="ds-demo">
+          <div class="status" data-state="ok"><span class="status__dot"></span><span>Есть сеть</span></div>
+          <div class="status" data-state="wait"><span class="status__dot"></span><span>Сохраняю прогресс…</span></div>
+          <div class="status" data-state="off"><span class="status__dot"></span><span>Нет сети</span></div>
+          <div class="status" data-state="live"><span class="status__dot"></span><span>Слушаю</span></div>
+        </div>
+      </section>
+
+      <section class="ds-section">
+        <h2 class="ds-section__title">Кнопки и текст</h2>
+        <div class="ds-demo">
+          <p class="eyebrow">Надзаголовок</p>
+          <h3 class="display">Рынок</h3>
+          <p class="lead">Фрукты, вес, сколько стоит, торг.</p>
+          <button class="btn btn--cta" type="button">Начать урок</button>
+          <button class="btn btn--cta" type="button" disabled>Недоступно</button>
+          <button class="btn btn--quiet" type="button">Не могу говорить</button>
+          <div class="card">
+            <p class="caption">Серия дней</p>
+            <p class="stat__value">12</p>
+          </div>
+        </div>
+      </section>
+
+      <div id="ds-root"></div>
+    </main>
+    <script type="module" src="/src/design-system.ts"></script>
+  </body>
+</html>

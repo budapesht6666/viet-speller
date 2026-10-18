@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Viet Speller</title>
+    <meta name="description" content="Вьетнамский с нуля для тех, кто живёт во Вьетнаме" />
+
+    <!-- Запуск с домашнего экрана. На iOS «На экран Домой» даёт WebClip, а не
+         полноценный PWA: standalone включается именно этим метатегом. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Viet Speller" />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180x180.png" />
+
+    <!-- ── Критический стиль ────────────────────────────────────────────────
+         Единственное место, где значения написаны вручную, а не взяты из
+         tokens.css: блок работает до того, как таблица стилей загружена, а в
+         разработке Vite вставляет её вообще скриптом. Без него первый кадр
+         показывает экраны разом и картинки в натуральную величину.
+
+         Цвета продублированы с --c-paper и --c-accent и с theme-color выше;
+         трогая один, правьте все. -->
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #ffffff;
+      }
+      [hidden] {
+        display: none;
+      }
+
+      /* Заставка закрывает не «долгую загрузку», а перестройку интерфейса:
+         Preact рисует экран скриптом, Nunito приезжает отдельным файлом. Без
+         заставки человек видит, как текст на глазах меняет шрифт и прыгает. */
+      #boot {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+      }
+
+      /* Кружок проявляется только через 0.4 с: при быстрой загрузке он мигнул
+         бы на один кадр и сам стал бы тем мельканием, ради которого всё. */
+      #boot::after {
+        content: '';
+        width: 28px;
+        height: 28px;
+        border: 3px solid rgba(250, 80, 0, 0.2);
+        border-top-color: #fa5000;
+        border-radius: 50%;
+        opacity: 0;
+        animation:
+          boot-spin 0.8s linear infinite,
+          boot-appear 0.3s ease 0.4s forwards;
+      }
+
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes boot-appear {
+        to {
+          opacity: 1;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #boot::after {
+          animation: boot-appear 0.3s ease 0.4s forwards;
+        }
+      }
+    </style>
+  </head>
+  <body data-app>
+    <!-- Снимается скриптом, когда интерфейс собран и шрифт готов, но не позже
+         потолка ожидания в main.tsx. -->
+    <div id="boot" aria-hidden="true"></div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

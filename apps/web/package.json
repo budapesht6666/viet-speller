@@ -1,0 +1,27 @@
+{
+  "name": "@viet/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json",
+    "icons": "pwa-assets-generator && node -e \"require('fs').renameSync('public/icons/favicon.ico','public/favicon.ico')\""
+  },
+  "dependencies": {
+    "@fontsource-variable/nunito": "^5.3.0",
+    "@preact/signals": "^2.11.3",
+    "@viet/content": "*",
+    "@viet/core": "*",
+    "gsap": "^3.15.0",
+    "preact": "^11.0.1"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "@vite-pwa/assets-generator": "^2.0.0",
+    "vite-plugin-pwa": "^2.0.0",
+    "workbox-window": "^7.4.1"
+  }
+}
