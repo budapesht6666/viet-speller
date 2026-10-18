@@ -173,6 +173,35 @@ export function buildLesson(lesson: Lesson, ctx: LessonContext): Step[] {
   return steps;
 }
 
+/** Сколько элементов в одной тренировке: 3–5 минут, как урок. */
+export const REVIEW_MAX = 15;
+
+export interface ReviewContext extends LessonContext {
+  /** Флаги урока, в котором элемент вводился: тоны и звуки — на слух. */
+  lessonOf: (itemId: string) => Pick<Lesson, 'listenOnly' | 'toneDrill'>;
+}
+
+/**
+ * Ежедневная тренировка: по одному вопросу на элемент, которому подошёл
+ * срок. Вопросы те же, что в уроке, но без знакомства — элемент уже знаком.
+ * Сказать вслух — каждый третий, если можно говорить.
+ */
+export function buildReview(itemIds: string[], ctx: ReviewContext): Step[] {
+  const random = ctx.random ?? Math.random;
+  const pool = (target: Item) => shuffle(ctx.known, random).filter((i) => i.id !== target.id);
+  return itemIds.slice(0, REVIEW_MAX).map((id, k): Step => {
+    const target = ctx.lookup(id);
+    const flags = ctx.lessonOf(id);
+    if (flags.toneDrill) {
+      const options = toneOptions(target, pool(target), random);
+      if (options) return { kind: 'tone', itemId: id, options };
+    }
+    if (ctx.mic && !flags.listenOnly && k % 3 === 2) return { kind: 'say', itemId: id };
+    const kind = k % 2 === 0 ? 'hear' : 'meaning';
+    return { kind, itemId: id, options: pickOptions(target, pool(target), kind, false, random) };
+  });
+}
+
 /** Как засчитать услышанное. null — пока не похоже, слушаем дальше. */
 export function judgeSpeech(item: Item, transcript: string): { outcome: 'success' | 'almost'; how: HitHow } | null {
   const [hit] = findHits(normalize(transcript), [{ id: item.id, words: accepted(item) }]);

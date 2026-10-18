@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import request from 'supertest';
-import type { App } from 'supertest/types';
 
 // Окружение — до импорта AppModule: ConfigModule читает его при загрузке.
 const dir = mkdtempSync(join(tmpdir(), 'viet-api-'));
@@ -15,14 +14,14 @@ const { AppModule } = await import('../src/app.module.js');
 const { setup } = await import('../src/setup.js');
 
 describe('приложение целиком', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
 
   beforeAll(async () => {
     // NestFactory, а не Test.createTestingModule: тестовый модуль создаёт
     // провайдеры раньше, чем у приложения появляется HTTP-адаптер, и
     // ServeStaticModule молча ставит пустой загрузчик — фронтенд не
     // раздаётся только в тесте. См. NEST-NOTES.md.
-    app = setup(await NestFactory.create<INestApplication<App>>(AppModule, { logger: false }));
+    app = setup(await NestFactory.create(AppModule, { logger: false }));
     await app.init();
   });
 

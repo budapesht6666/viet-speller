@@ -17,7 +17,7 @@
     "dev:api": "npm run build:packages && npm run start:dev -w @viet/api",
     "build:packages": "npm run build -w @viet/core && npm run build -w @viet/content && npm run generate -w @viet/api",
     "build": "npm run build:packages && npm run build -w @viet/web && npm run build -w @viet/api",
-    "typecheck": "npm run typecheck -w @viet/core && npm run typecheck -w @viet/content && npm run typecheck -w @viet/web",
+    "typecheck": "tsc -p packages/core/tsconfig.json && tsc -p packages/content/tsconfig.json && tsc -p apps/web/tsconfig.json && npm run generate -w @viet/api && tsc -p apps/api/tsconfig.json --noEmit",
     "test": "npm run build:packages && vitest run && npm run test:probe",
     "test:watch": "vitest",
     "tunnel": "cloudflared tunnel --url http://localhost:5180",

@@ -3,6 +3,8 @@ import { defineConfig } from 'vitest/config';
 // Один запуск на все пакеты: `npm test` из корня, он же в pre-commit.
 export default defineConfig({
   test: {
+    // У юнит-проекта бэкенда тестов пока нет — это не провал.
+    passWithNoTests: true,
     projects: [
       'packages/core',
       'packages/content',

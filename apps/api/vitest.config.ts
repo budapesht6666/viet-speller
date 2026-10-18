@@ -8,6 +8,5 @@ export default defineProject({
     name: 'api',
     globals: true,
     include: ['src/**/*.spec.ts'],
-    passWithNoTests: true,
   },
 });

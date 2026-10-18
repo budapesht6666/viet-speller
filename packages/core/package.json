@@ -18,6 +18,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "read-vietnamese-number": "^2.4.0"
+    "read-vietnamese-number": "^2.4.0",
+    "ts-fsrs": "^5.4.2"
   }
 }
