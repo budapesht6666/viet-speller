@@ -23,7 +23,7 @@ const PAGE = '/vi-probe.html';
 
 const server = await createServer({ configFile: new URL('../research/vite.config.mjs', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'), logLevel: 'warn' });
 await server.listen();
-console.log(`Проба запущена: http://localhost:${PORT}${PAGE}  (с этого адреса ноутбук играет образцы)`);
+console.log(`Проба запущена. Ноутбук-колонка: http://localhost:${PORT}${PAGE}?speaker → «Включить колонку»`);
 console.log('Поднимаю туннель…');
 
 const tunnel = Tunnel.quick(`http://localhost:${PORT}`);

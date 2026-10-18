@@ -59,6 +59,12 @@
     height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word;
   }
   .hint{color:var(--dim);font-size:13px;margin:6px 0 0}
+  #live{font-size:15px;padding:8px 10px;background:#0b0e13;border:1px dashed var(--line);border-radius:8px;margin-top:8px;word-break:break-word;min-height:38px}
+  /* Ноутбук-колонка: только карточка колонки, остальное ему не нужно. */
+  body.speaker .card:not(#speakerCard), body.speaker > .hint{display:none}
+  #speakerCard{display:none}
+  body.speaker #speakerCard{display:block}
+  #speakerText{font-size:44px;font-weight:700;margin:10px 0 4px;line-height:1.2}
   pre{white-space:pre-wrap;font-size:12px;background:#0b0e13;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:300px;overflow:auto}
 </style>
 </head>
@@ -86,9 +92,26 @@
     <option value="vi-VN-HoaiMyNeural">HoaiMy (женский)</option>
     <option value="vi-VN-NamMinhNeural">NamMinh (мужской)</option>
   </select>
-  <button class="primary" id="startSession">Включить распознавание</button>
+  <label for="sessionMode">Сессия распознавания</label>
+  <select id="sessionMode">
+    <option value="per-prompt">новая на каждое задание</option>
+    <option value="single">одна на весь замер</option>
+  </select>
+  <button class="primary" id="startSession" hidden>Включить распознавание</button>
   <div id="srState" class="dim">распознавание выключено</div>
-  <p class="hint">Сессия одна на весь замер, как будет в приложении. Включается касанием — иначе Safari не даст микрофон.</p>
+  <p class="hint" id="sessionHint"></p>
+  <p class="hint" id="remoteHint" hidden>Ноутбук: открой <b>http://localhost:5174/vi-probe.html?speaker</b> и нажми «Включить колонку». Образец он сыграет сам, когда ты нажмёшь «Слушать» здесь.</p>
+  <div class="hint">Телефон слышит сейчас:</div>
+  <div id="live" class="dim">—</div>
+</div>
+
+<div class="card" id="speakerCard">
+  <h2>Колонка</h2>
+  <p class="hint">Этот экран играет образцы по команде телефона. Положи ноутбук примерно в метре от телефона, громкость средняя, без наушников.</p>
+  <button class="primary" id="speakerOn">Включить колонку</button>
+  <div id="speakerState" class="dim">выключена</div>
+  <div id="speakerText"></div>
+  <div id="speakerRu" class="dim"></div>
 </div>
 
 <div class="card" id="promptCard">
@@ -192,18 +215,29 @@ const results = saved.results || {};   // id → { heard, verdict, label, timing
 let index = Math.min(saved.index || 0, prompts.length - 1);
 if (saved.speaker) $('speaker').value = saved.speaker;
 if (saved.voice) $('voice').value = saved.voice;
+if (saved.sessionMode) $('sessionMode').value = saved.sessionMode;
 function persist() {
   try {
-    localStorage.setItem(STORE, JSON.stringify({ results, index, speaker: $('speaker').value, voice: $('voice').value }));
+    localStorage.setItem(STORE, JSON.stringify({ results, index, speaker: $('speaker').value, voice: $('voice').value, sessionMode: $('sessionMode').value }));
   } catch { /* не страшно: отчёт можно скопировать */ }
 }
-$('speaker').onchange = () => { persist(); log(`говорит: ${$('speaker').value}`); };
+const showRemoteHint = () => ($('remoteHint').hidden = $('speaker').value !== 'sample-remote');
+$('speaker').onchange = () => { persist(); showRemoteHint(); log(`говорит: ${$('speaker').value}`); };
+showRemoteHint();
 $('voice').onchange = () => { persist(); log(`голос образца: ${$('voice').value}`); };
 
-/* ---------- распознавание: одна сессия на весь замер ---------- */
-let rec = null, wanted = false, sessionId = 0;
+/* ---------- распознавание ---------- */
+/**
+ * Два режима. «Новая на каждое задание» — по умолчанию: в прогоне A на iPhone
+ * сессия оборвалась сама через ~60 с, а перезапущенная пришла с мёртвым
+ * микрофоном (`audio-capture: Source is stopped` после 40 с тишины). Задания,
+ * попавшие в такую сессию, пропадают. «Одна на весь замер» оставлена, чтобы
+ * этот обрыв можно было повторить и измерить.
+ */
+let rec = null, wanted = false, sessionId = 0, sessionStartedAt = 0;
 const sessionText = new Map();   // сессия → полная расшифровка (все результаты подряд)
 let win = null;                  // открытое окно задания
+const perPrompt = () => $('sessionMode').value === 'per-prompt';
 
 function setSrState(text, cls) { $('srState').textContent = text; $('srState').className = cls || 'dim'; }
 
@@ -213,23 +247,37 @@ function spawn() {
   r.continuous = true;
   r.interimResults = true;
   r.maxAlternatives = 5;
-  r.onstart = () => { sessionId++; sessionText.set(sessionId, ''); log(`SR onstart, сессия #${sessionId}`, 'ok'); setSrState('слушает (сессия #' + sessionId + ')', 'ok'); $('listen').disabled = false; };
-  r.onaudiostart = () => log('SR onaudiostart', 'dim');
-  r.onspeechstart = () => { log('SR onspeechstart', 'dim'); if (win && win.speechAt == null) win.speechAt = now(); };
-  r.onspeechend = () => log('SR onspeechend', 'dim');
-  r.onnomatch = () => log('SR onnomatch', 'warn');
+  // Старый экземпляр после abort ещё может прислать onend или onresult —
+  // его события чужие и не должны трогать текущую сессию.
+  const mine = () => rec === r;
+  r.onstart = () => {
+    if (!mine()) return;
+    sessionId++; sessionStartedAt = now(); sessionText.set(sessionId, '');
+    log(`SR onstart, сессия #${sessionId}`, 'ok');
+    setSrState(`слушает (сессия #${sessionId})`, 'ok');
+    if (win && win.session == null) win.session = sessionId;
+    $('listen').disabled = false;
+  };
+  r.onaudiostart = () => mine() && log('SR onaudiostart', 'dim');
+  r.onspeechstart = () => { if (!mine()) return; log('SR onspeechstart', 'dim'); if (win && win.speechAt == null) win.speechAt = now(); };
+  r.onspeechend = () => mine() && log('SR onspeechend', 'dim');
+  r.onnomatch = () => mine() && log('SR onnomatch', 'warn');
   r.onerror = (e) => {
-    log(`SR ONERROR: ${e.error}${e.message ? ' — ' + e.message : ''}`, e.error === 'no-speech' || e.error === 'aborted' ? 'dim' : 'bad');
+    log(`SR ONERROR: ${e.error}${e.message ? ' — ' + e.message : ''}${mine() ? '' : ' (старая сессия)'}`, e.error === 'no-speech' || e.error === 'aborted' ? 'dim' : 'bad');
+    if (!mine()) return;
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { wanted = false; setSrState('микрофон запрещён: ' + e.error, 'bad'); }
-    if (e.error === 'network') setSrState('нет сети у распознавания', 'bad');
+    else if (e.error === 'network') setSrState('нет сети у распознавания', 'bad');
+    else if (e.error === 'audio-capture') setSrState('микрофон отвалился (audio-capture) — перезапускаю', 'bad');
   };
   r.onend = () => {
-    log(`SR onend — сессия #${sessionId} закончилась`, 'warn');
+    if (!mine()) return;
+    log(`SR onend — сессия #${sessionId} прожила ${(now() - sessionStartedAt).toFixed(1)} с`, 'warn');
     rec = null;
-    if (!wanted) { setSrState('распознавание выключено'); $('listen').disabled = true; return; }
-    setTimeout(() => { if (wanted) { log('авторестарт'); spawn(); } }, 150);
+    if (!wanted) { setSrState('распознавание выключено'); if (!perPrompt()) $('listen').disabled = true; return; }
+    setTimeout(() => { if (wanted && !rec) { log('авторестарт'); spawn(); } }, 150);
   };
   r.onresult = (e) => {
+    if (!mine()) return;
     const t = now();
     const parts = [];
     let anyFinal = false;
@@ -246,18 +294,51 @@ function spawn() {
     }
     // results.length и resultIndex пишем всегда: от того, растёт ли один
     // результат или появляются новые, зависит разбор хвоста в приложении.
-    log(`onresult len=${e.results.length} idx=${e.resultIndex} | ${desc.join(' | ')}`, anyFinal ? 'ok' : 'dim');
-    sessionText.set(sessionId, parts.join(' '));
+    log(`onresult len=${e.results.length} idx=${e.resultIndex}${win ? '' : ' (вне окна)'} | ${desc.join(' | ')}`, anyFinal ? 'ok' : 'dim');
+    const full = parts.join(' ');
+    sessionText.set(sessionId, full);
+    $('live').textContent = `#${sessionId}: ${full.trim() || '…'}`;
+    $('live').className = anyFinal ? '' : 'dim';
     if (win) onWindowEvent(t, anyFinal);
   };
   rec = r;
   try { r.start(); log('SR.start() вызван'); }
-  catch (err) { log(`SR.start() бросил: ${err.name} ${err.message}`, 'bad'); }
+  catch (err) {
+    // Мгновенный start() после конца прошлой сессии Safari отвергает как
+    // повторный запуск — одна попытка чуть позже.
+    log(`SR.start() бросил: ${err.name} ${err.message} — повтор через 300 мс`, 'bad');
+    setTimeout(() => { if (mine()) { try { r.start(); log('SR.start() повтор'); } catch (e2) { log(`повтор не удался: ${e2.message}`, 'bad'); } } }, 300);
+  }
 }
+
+function stopSession() {
+  wanted = false;
+  const r = rec;
+  rec = null;
+  if (r) { try { r.abort(); } catch {} }
+}
+
+function applySessionMode() {
+  const single = !perPrompt();
+  $('startSession').hidden = !single;
+  $('sessionHint').textContent = single
+    ? 'Сессия включается кнопкой и живёт весь замер. Включается касанием — иначе Safari не даст микрофон.'
+    : 'Каждое «Слушать» открывает новую сессию, конец задания её закрывает. Разрешение на микрофон Safari спросит при первом нажатии.';
+  $('listen').disabled = single ? !rec : !SR;
+}
+$('sessionMode').onchange = () => {
+  if (win) closeWindow('смена режима');
+  stopSession();
+  $('startSession').textContent = 'Включить распознавание';
+  setSrState('распознавание выключено');
+  applySessionMode();
+  persist();
+  log(`режим сессии: ${$('sessionMode').value}`);
+};
 
 $('startSession').onclick = () => {
   if (!SR) { log('SpeechRecognition нет — нечего включать', 'bad'); return; }
-  if (wanted) { wanted = false; try { rec && rec.stop(); } catch {} $('startSession').textContent = 'Включить распознавание'; return; }
+  if (wanted) { stopSession(); setSrState('распознавание выключено'); $('listen').disabled = true; $('startSession').textContent = 'Включить распознавание'; return; }
   wanted = true;
   $('startSession').textContent = 'Выключить распознавание';
   setSrState('запускается…', 'warn');
@@ -265,16 +346,16 @@ $('startSession').onclick = () => {
 };
 
 /* ---------- окно задания ---------- */
+/** Режем по пробелам, а не по нормализованным словам: в отчёт идёт запись движка как есть (`50.000`). */
+const tokens = (text) => text.trim().split(/\s+/).filter(Boolean);
+
 /**
  * Услышанное за окно — это слова, пришедшие после его открытия. Считаем по
  * словам, а не по индексам результатов: если Safari копит всю сессию в одном
  * результате, индекс у фразы задания тот же, что у прошлой.
  */
-/** Режем по пробелам, а не по нормализованным словам: в отчёт идёт запись движка как есть (`50.000`). */
-const tokens = (text) => text.trim().split(/\s+/).filter(Boolean);
-
 function heardInWindow() {
-  if (!win) return '';
+  if (!win || win.session == null) return '';
   const out = [];
   for (const [sid, text] of sessionText) {
     if (sid < win.session) continue;
@@ -283,6 +364,10 @@ function heardInWindow() {
   }
   return out.join(' ');
 }
+
+/** Окно закрывается само: после финала и тишины или по потолку ожидания. */
+const SETTLE_MS = 1500;
+const SILENCE_MS = 15000;
 
 function onWindowEvent(t, anyFinal) {
   const heard = heardInWindow();
@@ -294,6 +379,12 @@ function onWindowEvent(t, anyFinal) {
     if (win.matchAt == null && v.said !== 'none') win.matchAt = t;
   }
   if (anyFinal && win.finalAt == null && heard) win.finalAt = t;
+  if (heard) {
+    // Таймер перезаводится на каждом событии: закрываемся, только когда после
+    // финала полторы секунды ничего не меняется.
+    clearTimeout(win.settle);
+    if (win.finalAt != null) win.settle = setTimeout(() => win && closeWindow('финал и тишина'), SETTLE_MS);
+  }
   $('heard').replaceChildren();
   const s = document.createElement('span');
   s.className = anyFinal ? '' : 'interim';
@@ -301,17 +392,42 @@ function onWindowEvent(t, anyFinal) {
   $('heard').append(s);
 }
 
+function commandSpeaker(p) {
+  fetch('./probe-relay', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ seq: Date.now(), id: p.id, text: p.text, ru: p.ru, voice: $('voice').value }),
+  }).then(
+    (r) => log(r.ok ? 'колонке отправлена команда' : `колонка: сервер ответил ${r.status}`, r.ok ? 'dim' : 'bad'),
+    (e) => log(`колонка: не отправилось — ${e.message}`, 'bad'),
+  );
+}
+
 function openWindow() {
-  const text = sessionText.get(sessionId) || '';
-  win = { session: sessionId, skipWords: tokens(text).length, openAt: now(), lastHeard: '' };
+  const p = prompts[index];
+  if (perPrompt()) {
+    stopSession();
+    win = { session: null, skipWords: 0, openAt: now(), lastHeard: '' };
+    wanted = true;
+    setSrState('запускается…', 'warn');
+    spawn();
+  } else {
+    const text = sessionText.get(sessionId) || '';
+    win = { session: sessionId, skipWords: tokens(text).length, openAt: now(), lastHeard: '' };
+  }
+  win.silence = setTimeout(() => win && !win.lastHeard && closeWindow('15 с тишины'), SILENCE_MS);
   $('listen').textContent = 'Готово';
   $('listen').classList.add('listening');
   $('heard').innerHTML = '<span class="dim">слушаю…</span>';
   $('verdict').textContent = '';
-  log(`--- окно: ${prompts[index].id} «${prompts[index].text}» (говорит: ${$('speaker').value})`);
+  log(`--- окно: ${p.id} «${p.text}» (говорит: ${$('speaker').value}, сессия: ${$('sessionMode').value})`);
+  if ($('speaker').value === 'sample-remote') commandSpeaker(p);
 }
 
-function closeWindow() {
+function closeWindow(why = 'вручную') {
+  if (!win) return;
+  clearTimeout(win.settle);
+  clearTimeout(win.silence);
   const p = prompts[index];
   const heard = heardInWindow();
   const v = verdict(p, heard);
@@ -325,9 +441,10 @@ function closeWindow() {
     playEnd: rel(win.playEndAt),
   };
   const prev = results[p.id];
-  results[p.id] = { heard, verdict: v, label, timings, speaker: $('speaker').value, voice: $('voice').value, attempts: (prev?.attempts || 0) + 1 };
-  log(`>>> ${p.id}: «${heard}» → ${label} | ${JSON.stringify(timings)}`, v.said === 'exact' ? 'ok' : 'warn');
+  results[p.id] = { heard, verdict: v, label, timings, speaker: $('speaker').value, voice: $('voice').value, session: $('sessionMode').value, attempts: (prev?.attempts || 0) + 1 };
+  log(`>>> ${p.id}: «${heard}» → ${label} (закрыто: ${why}) | ${JSON.stringify(timings)}`, v.said === 'exact' ? 'ok' : 'warn');
   win = null;
+  if (perPrompt()) { stopSession(); setSrState('распознавание выключено'); }
   $('listen').textContent = 'Слушать ещё раз';
   $('listen').classList.remove('listening');
   showVerdict(p);
@@ -339,16 +456,71 @@ $('listen').onclick = () => (win ? closeWindow() : openWindow());
 
 /* ---------- образец ---------- */
 const audio = $('audio');
+function sampleUrl(text, voice) {
+  const file = manifest[`${voice}|+0%|${text.normalize('NFC')}`];
+  return file ? `./audio/${file}` : null;
+}
 $('play').onclick = () => {
   const p = prompts[index];
-  const key = `${$('voice').value}|+0%|${p.text.normalize('NFC')}`;
-  const file = manifest[key];
-  if (!file) { log(`нет образца для ${key}`, 'warn'); return; }
-  audio.src = `./audio/${file}`;
+  const url = sampleUrl(p.text, $('voice').value);
+  if (!url) { log(`нет образца для «${p.text}»`, 'warn'); return; }
+  audio.src = url;
   audio.onplay = () => { log(`образец играет${win ? ' (окно открыто)' : ''}`, 'dim'); if (win) win.playStartAt = now(); };
   audio.onended = () => { log('образец закончился', 'dim'); if (win) win.playEndAt = now(); };
   audio.play().catch((e) => log(`audio.play: ${e.name} ${e.message}`, 'bad'));
 };
+
+/* ---------- ноутбук-колонка ---------- */
+/**
+ * `?speaker`: экран ничего не слушает, только играет образец, когда телефон
+ * открывает окно задания. Команда идёт через сервер пробы
+ * (research/vite.config.mjs), поэтому номера заданий на двух устройствах
+ * разойтись не могут.
+ */
+if (new URLSearchParams(location.search).has('speaker')) {
+  document.body.classList.add('speaker');
+  let lastSeq = null;
+  let offline = false;
+  const state = (t, cls) => { $('speakerState').textContent = t; $('speakerState').className = cls || 'dim'; };
+  $('speakerOn').onclick = () => {
+    // Касание разрешает странице звук: без него браузер не даст играть по
+    // команде издалека.
+    audio.muted = true;
+    audio.play().catch(() => {}).finally(() => { audio.pause(); audio.muted = false; });
+    $('speakerOn').hidden = true;
+    state('жду команды с телефона', 'ok');
+    const poll = async () => {
+      try {
+        const cmd = await (await fetch('./probe-relay', { cache: 'no-store' })).json();
+        if (offline) { offline = false; state('жду команды с телефона', 'ok'); }
+        if (lastSeq === null) lastSeq = cmd.seq;      // команду, пришедшую до включения, не играем
+        else if (cmd.seq !== lastSeq) {
+          lastSeq = cmd.seq;
+          $('speakerText').textContent = cmd.text;
+          $('speakerRu').textContent = cmd.ru || '';
+          const url = sampleUrl(cmd.text, cmd.voice);
+          if (!url) state(`нет образца для «${cmd.text}»`, 'bad');
+          else {
+            // Пауза перед звуком: телефону нужно время поднять сессию.
+            await new Promise((r) => setTimeout(r, 800));
+            audio.src = url;
+            state('играю', 'warn');
+            await audio.play().then(
+              () => new Promise((r) => (audio.onended = r)),
+              (e) => state(`не играет: ${e.message}`, 'bad'),
+            );
+            if ($('speakerState').textContent === 'играю') state('жду команды с телефона', 'ok');
+          }
+        }
+      } catch {
+        offline = true;
+        state('нет связи с сервером пробы — запущен ли npm run probe:phone?', 'bad');
+      }
+      setTimeout(poll, 250);
+    };
+    poll();
+  };
+}
 
 /* ---------- навигация ---------- */
 function showVerdict(p) {
@@ -434,7 +606,7 @@ function renderSummary() {
 
 function report() {
   const md = [];
-  md.push(`### Прогон: ${env.mode}, говорит ${$('speaker').value}`);
+  md.push(`### Прогон: ${env.mode}, говорит ${$('speaker').value}, сессия ${$('sessionMode').value}`);
   md.push('', `- UA: \`${env.ua}\``, `- secure=${env.secure}, SR=${env.sr}, phrases=${env.phrases}`, '');
   md.push('| Вопрос | Итог |', '|---|---|');
   for (const [k, v] of conclusions()) md.push(`| ${k} | ${v} |`);
@@ -469,6 +641,7 @@ $('reset').onclick = () => {
   index = 0; persist(); show(); renderSummary(); log('результаты стёрты');
 };
 
+applySessionMode();
 show();
 renderSummary();
 </script>
