@@ -26,8 +26,8 @@ describe('normalize', () => {
     expect(normalize('à')).toEqual(normalize('à'));
   });
 
-  it('оставляет цифры — цену движок может вернуть числом', () => {
-    expect(normalize('50.000 đồng')).toEqual(['50', '000', 'đồng']);
+  it('превращает цифры в слова — цену движок может вернуть числом', () => {
+    expect(normalize('50.000 đồng')).toEqual(['năm', 'mươi', 'nghìn', 'đồng']);
   });
 });
 

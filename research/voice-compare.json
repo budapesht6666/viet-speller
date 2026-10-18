@@ -1,0 +1,124 @@
+{
+  "prompts": [
+    {
+      "id": "abc-xin",
+      "text": "xin",
+      "ru": "просить (вежливо)"
+    },
+    {
+      "id": "abc-sua",
+      "text": "sữa",
+      "ru": "молоко"
+    },
+    {
+      "id": "abc-tra",
+      "text": "trà",
+      "ru": "чай"
+    },
+    {
+      "id": "abc-cho",
+      "text": "chợ",
+      "ru": "рынок"
+    },
+    {
+      "id": "abc-nha",
+      "text": "nhà",
+      "ru": "дом"
+    },
+    {
+      "id": "abc-vang",
+      "text": "vâng",
+      "ru": "да (вежливо)"
+    },
+    {
+      "id": "tone-ma-hoi",
+      "text": "mả",
+      "ru": "могила"
+    },
+    {
+      "id": "tone-ma-nga",
+      "text": "mã",
+      "ru": "код (mã số); лошадь — в составе слов"
+    },
+    {
+      "id": "tone-ma-nang",
+      "text": "mạ",
+      "ru": "рисовая рассада"
+    },
+    {
+      "id": "tone-ban-friend",
+      "text": "bạn",
+      "ru": "друг; ты (ровеснику)"
+    },
+    {
+      "id": "tone-ca-fish",
+      "text": "cá",
+      "ru": "рыба"
+    },
+    {
+      "id": "num-15",
+      "text": "mười lăm",
+      "ru": "пятнадцать"
+    },
+    {
+      "id": "num-21",
+      "text": "hai mươi mốt",
+      "ru": "двадцать один"
+    },
+    {
+      "id": "num-24",
+      "text": "hai mươi bốn",
+      "ru": "двадцать четыре"
+    },
+    {
+      "id": "num-101",
+      "text": "một trăm lẻ một",
+      "ru": "сто один"
+    },
+    {
+      "id": "num-1000",
+      "text": "một nghìn",
+      "ru": "тысяча"
+    },
+    {
+      "id": "price-50k",
+      "text": "năm mươi nghìn",
+      "ru": "50 000"
+    },
+    {
+      "id": "price-chuc",
+      "text": "năm chục",
+      "ru": "50 тысяч — так говорят на рынке"
+    },
+    {
+      "id": "price-how-much",
+      "text": "bao nhiêu tiền",
+      "ru": "сколько стоит?"
+    },
+    {
+      "id": "price-200k",
+      "text": "hai trăm nghìn đồng",
+      "ru": "200 000 донгов"
+    },
+    {
+      "id": "price-too-expensive",
+      "text": "đắt quá",
+      "ru": "слишком дорого"
+    },
+    {
+      "id": "abc-ngu",
+      "text": "ngủ",
+      "ru": "спать"
+    },
+    {
+      "id": "abc-ghe",
+      "text": "ghế",
+      "ru": "стул"
+    },
+    {
+      "id": "abc-qua",
+      "text": "quá",
+      "ru": "слишком, очень"
+    }
+  ]
+}

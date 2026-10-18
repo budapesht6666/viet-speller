@@ -91,7 +91,7 @@ function probeServer() {
         const d = new Date();
         const pad = (n) => String(n).padStart(2, '0');
         const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
-        const name = `${stamp}-${String(report.name || 'run').replace(/[^\w-]+/g, '_')}.md`;
+        const name = `${stamp}-${String(report.name || 'run').replace(/[^\p{L}\p{N}_-]+/gu, '_')}.md`;
         writeFileSync(join(dir, name), report.text, 'utf8');
         say(`отчёт сохранён: research/runs/${name}`);
         send(res, 200, { ok: true, path: `research/runs/${name}` });

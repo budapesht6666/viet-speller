@@ -16,6 +16,7 @@
  * Модуль чистый: ни DOM, ни распознавания. Его импортируют и клиент, и сервер.
  */
 
+import { digitsToWords } from './numbers.js';
 import { fold, stripTone, syllable } from './tone.js';
 
 export interface MatchProfile {
@@ -86,11 +87,12 @@ export interface Hit<T> extends Comparison {
  * Разбирает расшифровку на слова: нижний регистр, NFC, без пунктуации.
  *
  * Вьетнамские буквы и знаки тона сохраняются — `[^a-z]` в Speller съедал
- * вьетнамскую расшифровку до пустоты. Цифры тоже остаются: движок может
- * вернуть цену цифрами, и выбросить её значит потерять ответ.
+ * вьетнамскую расшифровку до пустоты. Числа превращаются в слова до всего
+ * остального: движок может вернуть цену цифрами (`50.000`), а точка в ней —
+ * разделитель тысяч, а не пунктуация.
  */
 export function normalize(text: string): string[] {
-  return text
+  return digitsToWords(text)
     .normalize('NFC')
     .toLowerCase()
     .replace(/['’]/g, '')

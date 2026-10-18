@@ -2,6 +2,7 @@
 /**
  * Озвучка: текст → mp3, имя файла — хеш «движок + голос + скорость + текст».
  *
+ *   node scripts/tts.mjs --content       — весь контент голосом приложения, две скорости
  *   node scripts/tts.mjs --from research/vi-probe-prompts.json --out research/audio
  *
  * Повторный запуск ничего не перегенерирует: файл с таким хешем уже лежит,
@@ -18,10 +19,10 @@
 
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, rm, stat, writeFile, mkdtemp } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const VOICES = ['vi-VN-HoaiMyNeural', 'vi-VN-NamMinhNeural'];
 export const RATE_NORMAL = '+0%';
@@ -88,26 +89,39 @@ async function synthesizeOne(job, outDir, scratch) {
   }
 }
 
-/** Озвучивает задания и дописывает манифест. Возвращает счётчики. */
-export async function synthesize(jobs, outDir) {
+/**
+ * Озвучивает задания и пишет манифест. Возвращает счётчики.
+ *
+ * `fresh` — манифест собирается заново только из этих заданий (для
+ * контента: удалённое слово исчезает и из манифеста). `prune` — mp3, на
+ * которые манифест больше не ссылается, удаляются: мёртвый звук не копится
+ * в репозитории.
+ */
+export async function synthesize(jobs, outDir, { manifestPath = join(outDir, 'manifest.json'), fresh = false, prune = false } = {}) {
   await mkdir(outDir, { recursive: true });
-  const manifestPath = join(outDir, 'manifest.json');
   let manifest = {};
-  try {
-    manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  } catch {
-    /* манифеста ещё нет */
+  if (!fresh) {
+    try {
+      manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+    } catch {
+      /* манифеста ещё нет */
+    }
   }
 
   const scratch = await mkdtemp(join(tmpdir(), 'tts-'));
-  const counts = { new: 0, cached: 0 };
+  const counts = { new: 0, cached: 0, pruned: 0 };
   const queue = [...jobs];
+  let failed = null;
   try {
     await Promise.all(
       Array.from({ length: PARALLEL }, async () => {
-        for (let job = queue.shift(); job; job = queue.shift()) {
-          counts[await synthesizeOne(job, outDir, scratch)]++;
-          manifest[manifestKey(job)] = fileName(job);
+        for (let job = queue.shift(); job && !failed; job = queue.shift()) {
+          try {
+            counts[await synthesizeOne(job, outDir, scratch)]++;
+            manifest[manifestKey(job)] = fileName(job);
+          } catch (e) {
+            failed = e;
+          }
         }
       }),
     );
@@ -115,6 +129,17 @@ export async function synthesize(jobs, outDir) {
     await rm(scratch, { recursive: true, force: true });
     const sorted = Object.fromEntries(Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b)));
     await writeFile(manifestPath, `${JSON.stringify(sorted, null, 2)}\n`, 'utf8');
+  }
+  if (failed) throw failed;
+
+  if (prune) {
+    const used = new Set(Object.values(manifest));
+    for (const f of await readdir(outDir)) {
+      if (f.endsWith('.mp3') && !used.has(f)) {
+        await rm(join(outDir, f));
+        counts.pruned++;
+      }
+    }
   }
   return counts;
 }
@@ -124,22 +149,46 @@ function arg(name) {
   return i > 0 ? process.argv[i + 1] : undefined;
 }
 
+/** Задания пробы этапа 0: все тексты обоими голосами, обычная скорость. */
+async function probeJobs(from) {
+  const { prompts } = JSON.parse(await readFile(resolve(from), 'utf8'));
+  const texts = [...new Set(prompts.map((p) => p.text.normalize('NFC')))];
+  return texts.flatMap((text) => VOICES.map((voice) => ({ text, voice, rate: RATE_NORMAL })));
+}
+
+/**
+ * Задания контента: каждый элемент голосом приложения, в двух скоростях.
+ * Контент берётся из собранного пакета (`npm run build:packages`): так
+ * скрипт читает ровно то, что увидит приложение.
+ */
+async function contentJobs() {
+  const { items, SPEEDS, VOICE } = await import('@viet/content');
+  const texts = [...new Set(items.map((i) => i.vi.normalize('NFC')))];
+  return texts.flatMap((text) => Object.values(SPEEDS).map((rate) => ({ text, voice: VOICE, rate })));
+}
+
 async function main() {
+  if (process.argv.includes('--content')) {
+    const root = new URL('..', import.meta.url);
+    const counts = await synthesize(await contentJobs(), fileURLToPath(new URL('apps/web/public/audio', root)), {
+      manifestPath: fileURLToPath(new URL('packages/content/src/audio.json', root)),
+      fresh: true,
+      prune: true,
+    });
+    console.log(`контент: новых ${counts.new}, из кеша ${counts.cached}, удалено лишних ${counts.pruned}`);
+    return;
+  }
   const from = arg('from');
   const out = arg('out');
   if (!from || !out) {
-    console.error('node scripts/tts.mjs --from <prompts.json> --out <dir>');
+    console.error('node scripts/tts.mjs --content | --from <prompts.json> --out <dir>');
     process.exit(2);
   }
-  const { prompts } = JSON.parse(await readFile(resolve(from), 'utf8'));
-  const texts = [...new Set(prompts.map((p) => p.text.normalize('NFC')))];
-  const jobs = texts.flatMap((text) => VOICES.map((voice) => ({ text, voice, rate: RATE_NORMAL })));
-
-  const counts = await synthesize(jobs, resolve(out));
+  const counts = await synthesize(await probeJobs(from), resolve(out));
   console.log(`готово: новых ${counts.new}, из кеша ${counts.cached}`);
 }
 
-if (import.meta.url === `file:///${process.argv[1]?.replace(/\\/g, '/')}` || process.argv[1]?.endsWith('tts.mjs')) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((e) => {
     console.error(e.message);
     process.exit(1);

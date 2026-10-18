@@ -3,7 +3,15 @@
   "compilerOptions": {
     "noEmit": true,
     "types": [],
-    "paths": { "@viet/core": ["../core/src/index.ts"] }
+    "paths": {
+      "@viet/core": [
+        "../core/src/index.ts"
+      ]
+    },
+    "resolveJsonModule": true
   },
-  "include": ["src", "test"]
+  "include": [
+    "src",
+    "test"
+  ]
 }

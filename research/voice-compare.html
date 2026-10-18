@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Сравнение голосов</title>
+<meta name="theme-color" content="#0e1116">
+<style>
+  :root{ --bg:#0e1116; --card:#161b22; --line:#2a313c; --fg:#e6edf3; --dim:#8b949e; --ok:#3fb950; --acc:#58a6ff; }
+  *{box-sizing:border-box}
+  body{margin:0 auto;max-width:560px;background:var(--bg);color:var(--fg);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 12px)}
+  h1{font-size:19px;margin:0 0 4px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+  .hint{color:var(--dim);font-size:13px;margin:6px 0 0}
+  button,input{-webkit-appearance:none;appearance:none;width:100%;margin:6px 0;padding:14px 16px;background:#21262d;color:var(--fg);border:1px solid var(--line);border-radius:10px;font-size:16px;font-weight:600;font-family:inherit}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#04101f}
+  button.chosen{outline:3px solid var(--ok)}
+  .row{display:flex;gap:8px}.row>*{flex:1}
+  #text{font-size:36px;font-weight:700;margin:6px 0 2px;line-height:1.25}
+  #ru,#counter{color:var(--dim)}
+  [hidden]{display:none!important}
+  table{width:100%;border-collapse:collapse;font-size:15px}td{padding:6px 4px;border-bottom:1px solid var(--line)}
+</style>
+</head>
+<body>
+<h1>Какой голос лучше</h1>
+<p class="hint">Два голоса читают одно и то же. Какой из них A, а какой B — меняется от фразы к фразе, и узнать нельзя. Выбирай тот, по которому легче учить: тон слышно отчётливо, звучит естественно.</p>
+
+<div class="card" id="who">
+  <input id="name" placeholder="Кто голосует (имя)" autocomplete="off">
+  <button class="primary" id="begin">Начать</button>
+</div>
+
+<div class="card" id="vote" hidden>
+  <div id="counter"></div>
+  <div id="text"></div>
+  <div id="ru"></div>
+  <div class="row"><button id="playA">Голос A</button><button id="playB">Голос B</button></div>
+  <div class="row"><button id="pickA">A лучше</button><button id="pickSame">Одинаково</button><button id="pickB">B лучше</button></div>
+</div>
+
+<div class="card" id="done" hidden>
+  <p id="doneText"></p>
+  <table id="tally"></table>
+</div>
+
+<audio id="audio" playsinline></audio>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const VOICES = ['vi-VN-HoaiMyNeural', 'vi-VN-NamMinhNeural'];
+const { prompts } = await (await fetch('./voice-compare.json')).json();
+const manifest = await (await fetch('./audio/manifest.json')).json();
+const file = (voice, text) => manifest[`${voice}|+0%|${text.normalize('NFC')}`];
+
+let i = 0;
+const votes = [];
+// Голос за буквой — случайно для каждой фразы: слушающий не должен угадать
+// закономерность и голосовать за «того, кто был A».
+const order = prompts.map(() => (Math.random() < 0.5 ? [0, 1] : [1, 0]));
+
+function play(letter) {
+  const voice = VOICES[order[i][letter === 'A' ? 0 : 1]];
+  $('audio').src = `./audio/${file(voice, prompts[i].text)}`;
+  // Новый образец обрывает прежний — это не ошибка.
+  $('audio').play().catch(() => {});
+}
+function show() {
+  const p = prompts[i];
+  $('counter').textContent = `${i + 1} из ${prompts.length}`;
+  $('text').textContent = p.text;
+  $('ru').textContent = p.ru;
+}
+function pick(choice) {
+  const winner = choice === 'same' ? 'same' : VOICES[order[i][choice === 'A' ? 0 : 1]];
+  votes.push({ id: prompts[i].id, text: prompts[i].text, winner });
+  if (++i < prompts.length) { show(); play('A'); return; }
+  finish();
+}
+async function finish() {
+  $('vote').hidden = true;
+  $('done').hidden = false;
+  const tally = Object.fromEntries([...VOICES, 'same'].map((v) => [v, votes.filter((x) => x.winner === v).length]));
+  $('tally').innerHTML = Object.entries(tally).map(([v, n]) => `<tr><td>${v === 'same' ? 'одинаково' : v.replace('vi-VN-', '').replace('Neural', '')}</td><td>${n}</td></tr>`).join('');
+  const name = $('name').value.trim() || 'без имени';
+  const text = [`### Голоса: ${name}`, '', '| Голос | Голосов |', '|---|---|',
+    ...Object.entries(tally).map(([v, n]) => `| ${v} | ${n} |`), '', '| Фраза | Победил |', '|---|---|',
+    ...votes.map((x) => `| ${x.text} | ${x.winner} |`)].join('\n');
+  try {
+    const r = await fetch('./probe-report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: `voices-${name}`, text }) });
+    const res = await r.json();
+    $('doneText').textContent = res.ok ? `Спасибо! Голос сохранён на ноутбуке: ${res.path}` : 'Спасибо! На ноутбук не ушло — сделай снимок экрана.';
+  } catch {
+    $('doneText').textContent = 'Спасибо! На ноутбук не ушло — сделай снимок экрана.';
+  }
+}
+
+$('begin').onclick = () => { $('who').hidden = true; $('vote').hidden = false; show(); play('A'); };
+$('playA').onclick = () => play('A');
+$('playB').onclick = () => play('B');
+$('pickA').onclick = () => pick('A');
+$('pickB').onclick = () => pick('B');
+$('pickSame').onclick = () => pick('same');
+</script>
+</body>
+</html>
