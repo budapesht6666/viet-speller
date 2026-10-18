@@ -29,7 +29,8 @@
     "probe:phone": "node scripts/probe-phone.mjs",
     "tts": "npm run build:packages && node scripts/tts.mjs --content",
     "tts:compare": "node scripts/tts.mjs --from research/voice-compare.json --out research/audio",
-    "e2e": "npm run build:packages && playwright test"
+    "e2e": "npm run build:packages && playwright test",
+    "phone": "node scripts/phone.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
