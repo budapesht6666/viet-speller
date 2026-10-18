@@ -60,18 +60,25 @@
   }
   .hint{color:var(--dim);font-size:13px;margin:6px 0 0}
   #live{font-size:15px;padding:8px 10px;background:#0b0e13;border:1px dashed var(--line);border-radius:8px;margin-top:8px;word-break:break-word;min-height:38px}
-  /* Ноутбук-колонка: только карточка колонки, остальное ему не нужно. */
-  body.speaker .card:not(#speakerCard), body.speaker > .hint{display:none}
-  #speakerCard{display:none}
-  body.speaker #speakerCard{display:block}
-  #speakerText{font-size:44px;font-weight:700;margin:10px 0 4px;line-height:1.2}
+  #autoStart{font-size:19px;padding:18px 16px}
+  #autoState{font-size:15px;margin-top:6px}
+  details summary{cursor:pointer;color:var(--dim);font-size:14px;padding:4px 0}
   pre{white-space:pre-wrap;font-size:12px;background:#0b0e13;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:300px;overflow:auto}
 </style>
 </head>
 <body>
 
 <h1>Замер распознавания vi-VN</h1>
-<p class="hint">Протокол — research/VI-PROBE-CHECKLIST.md. Сначала прогон во вкладке, потом с иконки домашнего экрана.</p>
+<p class="hint">Протокол — research/VI-PROBE-CHECKLIST.md.</p>
+
+<div class="card" id="autoCard">
+  <h2>Автозамер</h2>
+  <p class="hint">Ноутбук сам проиграет 28 образцов, телефон их послушает. Положи телефон примерно в метре от ноутбука и ничего не трогай около 5 минут. Отчёт сам сохранится на ноутбуке.</p>
+  <button class="primary" id="autoStart">Начать автозамер</button>
+  <div id="autoState" class="dim"></div>
+  <div class="hint">Телефон слышит сейчас:</div>
+  <div id="live" class="dim">—</div>
+</div>
 
 <div class="card">
   <h2>Окружение</h2>
@@ -79,7 +86,8 @@
 </div>
 
 <div class="card">
-  <h2>Перед замером</h2>
+  <details>
+  <summary>Ручной режим</summary>
   <label for="speaker">Кто говорит</label>
   <select id="speaker">
     <option value="learner">я сам (учу язык)</option>
@@ -100,18 +108,8 @@
   <button class="primary" id="startSession" hidden>Включить распознавание</button>
   <div id="srState" class="dim">распознавание выключено</div>
   <p class="hint" id="sessionHint"></p>
-  <p class="hint" id="remoteHint" hidden>Ноутбук: открой <b>http://localhost:5174/vi-probe.html?speaker</b> и нажми «Включить колонку». Образец он сыграет сам, когда ты нажмёшь «Слушать» здесь.</p>
-  <div class="hint">Телефон слышит сейчас:</div>
-  <div id="live" class="dim">—</div>
-</div>
-
-<div class="card" id="speakerCard">
-  <h2>Колонка</h2>
-  <p class="hint">Этот экран играет образцы по команде телефона. Положи ноутбук примерно в метре от телефона, громкость средняя, без наушников.</p>
-  <button class="primary" id="speakerOn">Включить колонку</button>
-  <div id="speakerState" class="dim">выключена</div>
-  <div id="speakerText"></div>
-  <div id="speakerRu" class="dim"></div>
+  <p class="hint">«Образец с другого устройства»: «Слушать» здесь — и ноутбук сам сыграет образец.</p>
+  </details>
 </div>
 
 <div class="card" id="promptCard">
@@ -133,7 +131,7 @@
 <div class="card">
   <h2>Итог</h2>
   <div id="summary" class="dim">пока пусто</div>
-  <button class="primary" id="copyReport">Скопировать отчёт</button>
+  <button class="primary" id="copyReport">Сохранить отчёт на ноутбук</button>
   <button id="reset">Начать замер заново</button>
 </div>
 
@@ -221,9 +219,7 @@ function persist() {
     localStorage.setItem(STORE, JSON.stringify({ results, index, speaker: $('speaker').value, voice: $('voice').value, sessionMode: $('sessionMode').value }));
   } catch { /* не страшно: отчёт можно скопировать */ }
 }
-const showRemoteHint = () => ($('remoteHint').hidden = $('speaker').value !== 'sample-remote');
-$('speaker').onchange = () => { persist(); showRemoteHint(); log(`говорит: ${$('speaker').value}`); };
-showRemoteHint();
+$('speaker').onchange = () => { persist(); log(`говорит: ${$('speaker').value}`); };
 $('voice').onchange = () => { persist(); log(`голос образца: ${$('voice').value}`); };
 
 /* ---------- распознавание ---------- */
@@ -255,7 +251,7 @@ function spawn() {
     sessionId++; sessionStartedAt = now(); sessionText.set(sessionId, '');
     log(`SR onstart, сессия #${sessionId}`, 'ok');
     setSrState(`слушает (сессия #${sessionId})`, 'ok');
-    if (win && win.session == null) win.session = sessionId;
+    if (win && win.session == null) { win.session = sessionId; windowLive(); }
     $('listen').disabled = false;
   };
   r.onaudiostart = () => mine() && log('SR onaudiostart', 'dim');
@@ -265,7 +261,13 @@ function spawn() {
   r.onerror = (e) => {
     log(`SR ONERROR: ${e.error}${e.message ? ' — ' + e.message : ''}${mine() ? '' : ' (старая сессия)'}`, e.error === 'no-speech' || e.error === 'aborted' ? 'dim' : 'bad');
     if (!mine()) return;
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { wanted = false; setSrState('микрофон запрещён: ' + e.error, 'bad'); }
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      wanted = false;
+      setSrState('микрофон запрещён: ' + e.error, 'bad');
+      if (auto) stopAuto(sessionId > 0
+        ? 'Safari не даёт новую сессию без касания. Это тоже результат — пришли журнал.'
+        : 'Нет разрешения на микрофон. Разреши его и начни заново.');
+    }
     else if (e.error === 'network') setSrState('нет сети у распознавания', 'bad');
     else if (e.error === 'audio-capture') setSrState('микрофон отвалился (audio-capture) — перезапускаю', 'bad');
   };
@@ -367,7 +369,7 @@ function heardInWindow() {
 
 /** Окно закрывается само: после финала и тишины или по потолку ожидания. */
 const SETTLE_MS = 1500;
-const SILENCE_MS = 15000;
+const SILENCE_MS = 12000;
 
 function onWindowEvent(t, anyFinal) {
   const heard = heardInWindow();
@@ -392,15 +394,30 @@ function onWindowEvent(t, anyFinal) {
   $('heard').append(s);
 }
 
-function commandSpeaker(p) {
-  fetch('./probe-relay', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ seq: Date.now(), id: p.id, text: p.text, ru: p.ru, voice: $('voice').value }),
-  }).then(
-    (r) => log(r.ok ? 'колонке отправлена команда' : `колонка: сервер ответил ${r.status}`, r.ok ? 'dim' : 'bad'),
-    (e) => log(`колонка: не отправилось — ${e.message}`, 'bad'),
-  );
+/** Ноутбук играет образец сам (research/vite.config.mjs, ffplay). Ответ — когда доиграл. */
+async function commandSpeaker(p, w) {
+  log('ноутбук: играй');
+  try {
+    const r = await fetch('./probe-play', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: p.text, voice: $('voice').value }),
+    });
+    const res = await r.json();
+    w.playEndAt = now();
+    if (res.ok) log('ноутбук: образец доиграл', 'dim');
+    else { log(`ноутбук не сыграл: ${res.error}`, 'bad'); if (auto) stopAuto(`Ноутбук не играет звук: ${res.error}`); }
+  } catch (e) {
+    log(`ноутбук недоступен: ${e.message}`, 'bad');
+    if (auto) stopAuto('Нет связи с ноутбуком — запущен ли npm run probe:phone?');
+  }
+}
+
+/** Окно задания начинает ждать с момента, когда сессия слушает. */
+function windowLive() {
+  const w = win;
+  w.silence = setTimeout(() => win === w && !w.lastHeard && closeWindow('тишина'), SILENCE_MS);
+  if ($('speaker').value === 'sample-remote') commandSpeaker(prompts[index], w);
 }
 
 function openWindow() {
@@ -414,14 +431,13 @@ function openWindow() {
   } else {
     const text = sessionText.get(sessionId) || '';
     win = { session: sessionId, skipWords: tokens(text).length, openAt: now(), lastHeard: '' };
+    windowLive();
   }
-  win.silence = setTimeout(() => win && !win.lastHeard && closeWindow('15 с тишины'), SILENCE_MS);
   $('listen').textContent = 'Готово';
   $('listen').classList.add('listening');
   $('heard').innerHTML = '<span class="dim">слушаю…</span>';
   $('verdict').textContent = '';
   log(`--- окно: ${p.id} «${p.text}» (говорит: ${$('speaker').value}, сессия: ${$('sessionMode').value})`);
-  if ($('speaker').value === 'sample-remote') commandSpeaker(p);
 }
 
 function closeWindow(why = 'вручную') {
@@ -450,6 +466,9 @@ function closeWindow(why = 'вручную') {
   showVerdict(p);
   persist();
   renderSummary();
+  const done = windowDone;
+  windowDone = null;
+  done?.();
 }
 
 $('listen').onclick = () => (win ? closeWindow() : openWindow());
@@ -470,57 +489,60 @@ $('play').onclick = () => {
   audio.play().catch((e) => log(`audio.play: ${e.name} ${e.message}`, 'bad'));
 };
 
-/* ---------- ноутбук-колонка ---------- */
+/* ---------- автозамер ---------- */
 /**
- * `?speaker`: экран ничего не слушает, только играет образец, когда телефон
- * открывает окно задания. Команда идёт через сервер пробы
- * (research/vite.config.mjs), поэтому номера заданий на двух устройствах
- * разойтись не могут.
+ * Одно касание — и все задания подряд: новая сессия, ноутбук играет образец,
+ * окно закрывается само, следующее задание. Касание нужно ровно одно: без
+ * жеста Safari не даст микрофон. Отчёт уходит на ноутбук сам.
  */
-if (new URLSearchParams(location.search).has('speaker')) {
-  document.body.classList.add('speaker');
-  let lastSeq = null;
-  let offline = false;
-  const state = (t, cls) => { $('speakerState').textContent = t; $('speakerState').className = cls || 'dim'; };
-  $('speakerOn').onclick = () => {
-    // Касание разрешает странице звук: без него браузер не даст играть по
-    // команде издалека.
-    audio.muted = true;
-    audio.play().catch(() => {}).finally(() => { audio.pause(); audio.muted = false; });
-    $('speakerOn').hidden = true;
-    state('жду команды с телефона', 'ok');
-    const poll = async () => {
-      try {
-        const cmd = await (await fetch('./probe-relay', { cache: 'no-store' })).json();
-        if (offline) { offline = false; state('жду команды с телефона', 'ok'); }
-        if (lastSeq === null) lastSeq = cmd.seq;      // команду, пришедшую до включения, не играем
-        else if (cmd.seq !== lastSeq) {
-          lastSeq = cmd.seq;
-          $('speakerText').textContent = cmd.text;
-          $('speakerRu').textContent = cmd.ru || '';
-          const url = sampleUrl(cmd.text, cmd.voice);
-          if (!url) state(`нет образца для «${cmd.text}»`, 'bad');
-          else {
-            // Пауза перед звуком: телефону нужно время поднять сессию.
-            await new Promise((r) => setTimeout(r, 800));
-            audio.src = url;
-            state('играю', 'warn');
-            await audio.play().then(
-              () => new Promise((r) => (audio.onended = r)),
-              (e) => state(`не играет: ${e.message}`, 'bad'),
-            );
-            if ($('speakerState').textContent === 'играю') state('жду команды с телефона', 'ok');
-          }
-        }
-      } catch {
-        offline = true;
-        state('нет связи с сервером пробы — запущен ли npm run probe:phone?', 'bad');
-      }
-      setTimeout(poll, 250);
-    };
-    poll();
-  };
+let auto = false;
+let windowDone = null;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function stopAuto(reason) {
+  if (!auto) return;
+  auto = false;
+  $('autoState').textContent = reason;
+  $('autoState').className = 'bad';
+  log(`автозамер остановлен: ${reason}`, 'bad');
+  if (win) closeWindow('остановлено');
+  $('autoStart').textContent = 'Начать автозамер';
 }
+
+async function runAuto() {
+  auto = true;
+  $('autoStart').textContent = 'Остановить';
+  $('speaker').value = 'sample-remote';
+  $('sessionMode').value = 'per-prompt';
+  applySessionMode();
+  for (const k of Object.keys(results)) delete results[k];
+  log('=== автозамер ===');
+  const started = now();
+  for (index = 0; index < prompts.length && auto; index++) {
+    show();
+    $('autoState').textContent = `${index + 1} из ${prompts.length}: ${prompts[index].text}`;
+    $('autoState').className = 'warn';
+    const done = new Promise((r) => (windowDone = r));
+    openWindow();
+    await done;
+    await sleep(800);
+  }
+  if (index >= prompts.length) index = prompts.length - 1;
+  show();
+  if (!auto) { await saveReport(); return; }
+  auto = false;
+  $('autoStart').textContent = 'Начать автозамер';
+  $('autoState').textContent = `готово за ${Math.round((now() - started) / 60)} мин, сохраняю отчёт…`;
+  const path = await saveReport();
+  $('autoState').textContent = path ? `Готово. Отчёт на ноутбуке: ${path}` : 'Готово, но отчёт не сохранился — нажми «Сохранить отчёт на ноутбук»';
+  $('autoState').className = path ? 'ok' : 'bad';
+}
+
+$('autoStart').onclick = () => {
+  if (auto) { stopAuto('остановлено вручную'); return; }
+  if (!SR) { $('autoState').textContent = 'В этом браузере нет распознавания речи'; $('autoState').className = 'bad'; return; }
+  void runAuto();
+};
 
 /* ---------- навигация ---------- */
 function showVerdict(p) {
@@ -633,7 +655,30 @@ async function copy(text, btn) {
   btn.textContent = ok ? 'Скопировано' : 'Не вышло — выдели журнал вручную';
   setTimeout(() => (btn.textContent = label), 1800);
 }
-$('copyReport').onclick = (e) => copy(`${report()}\n\n<details><summary>журнал</summary>\n\n\`\`\`\n${lines.join('\n')}\n\`\`\`\n</details>\n`, e.currentTarget);
+const fullReport = () => `${report()}\n\n<details><summary>журнал</summary>\n\n\`\`\`\n${lines.join('\n')}\n\`\`\`\n</details>\n`;
+
+/** Отчёт кладётся в research/runs/ на ноутбуке. Возвращает путь или null. */
+async function saveReport() {
+  try {
+    const r = await fetch('./probe-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: `${env.mode}-${$('speaker').value}-${$('sessionMode').value}`, text: fullReport() }),
+    });
+    const res = await r.json();
+    if (res.ok) { log(`отчёт сохранён на ноутбуке: ${res.path}`, 'ok'); return res.path; }
+  } catch (e) {
+    log(`отчёт не ушёл на ноутбук: ${e.message}`, 'bad');
+  }
+  return null;
+}
+
+$('copyReport').onclick = async (e) => {
+  const btn = e.currentTarget;
+  const path = await saveReport();
+  if (path) { btn.textContent = 'Сохранено на ноутбуке'; setTimeout(() => (btn.textContent = 'Сохранить отчёт на ноутбук'), 2000); }
+  else copy(fullReport(), btn);
+};
 $('copyLog').onclick = (e) => copy(lines.join('\n'), e.currentTarget);
 $('reset').onclick = () => {
   if (!confirm('Стереть результаты этого прогона?')) return;

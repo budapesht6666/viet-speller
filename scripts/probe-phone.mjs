@@ -14,6 +14,8 @@
  * Ctrl+C останавливает оба. Адрес туннеля при каждом запуске новый.
  */
 
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { Tunnel } from 'cloudflared';
 import QRCode from 'qrcode';
 import { createServer } from 'vite';
@@ -21,9 +23,19 @@ import { createServer } from 'vite';
 const PORT = 5174;
 const PAGE = '/vi-probe.html';
 
-const server = await createServer({ configFile: new URL('../research/vite.config.mjs', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'), logLevel: 'warn' });
+// Образцы играет сам сервер через ffplay (из ffmpeg). Без него автозамер
+// молчал бы — лучше сказать об этом сразу, чем через пять минут.
+if (spawnSync('ffplay', ['-version'], { stdio: 'ignore' }).status !== 0) {
+  console.error('Не найден ffplay — он играет образцы. Поставь ffmpeg: winget install Gyan.FFmpeg');
+  process.exit(1);
+}
+
+const server = await createServer({
+  configFile: fileURLToPath(new URL('../research/vite.config.mjs', import.meta.url)),
+  logLevel: 'warn',
+});
 await server.listen();
-console.log(`Проба запущена. Ноутбук-колонка: http://localhost:${PORT}${PAGE}?speaker → «Включить колонку»`);
+console.log('Проба запущена. Образцы играют колонки этого ноутбука: громкость средняя, без наушников.');
 console.log('Поднимаю туннель…');
 
 const tunnel = Tunnel.quick(`http://localhost:${PORT}`);
@@ -38,6 +50,8 @@ tunnel.on('connected', async () => {
   console.log('\nНа iPhone открой в Safari (камера → QR-код):\n');
   console.log(await QRCode.toString(phone, { type: 'terminal', small: true }));
   console.log(`  ${phone}\n`);
+  console.log('Дальше на телефоне одна кнопка — «Начать автозамер». Телефон положи в метре от ноутбука.');
+  console.log('Отчёт сохранится сам в research/runs/.');
   console.log('Если страница не открылась сразу — подожди 10–20 секунд и обнови: новый адрес расходится по DNS не мгновенно.');
   console.log('Остановить: Ctrl+C. Пока окно открыто, адрес живёт.\n');
 });
