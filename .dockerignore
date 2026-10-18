@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.env
+**/*.db
+**/*.db-journal
+**/*.tsbuildinfo
+.git
+.claude
+apps/api/data
+apps/api/src/generated
+test-results
+playwright-report
+research
+scripts

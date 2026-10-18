@@ -12,7 +12,7 @@
     "node": ">=24.15"
   },
   "scripts": {
-    "prepare": "git config core.hooksPath .githooks",
+    "prepare": "node -e \"try{require('child_process').execSync('git config core.hooksPath .githooks',{stdio:'ignore'})}catch{}\"",
     "dev": "npm run dev -w @viet/web",
     "dev:api": "npm run build:packages && npm run start:dev -w @viet/api",
     "build:packages": "npm run build -w @viet/core && npm run build -w @viet/content && npm run generate -w @viet/api",

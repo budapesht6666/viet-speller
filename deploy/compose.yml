@@ -1,0 +1,50 @@
+# /srv/apps/viet-speller/compose.yml — шаблон web из vps-ops.
+# Скопировать на сервер рядом с repo/ (vps add создаёт каталог).
+#
+# В /srv/proxy/Caddyfile блок ставит `vps add`:
+#
+#   viet-speller.p1gog.duckdns.org {
+#       reverse_proxy viet-speller:3000
+#   }
+
+services:
+  app:
+    build: ./repo
+    # Имя контейнера = имя в reverse_proxy Caddy.
+    container_name: viet-speller
+    restart: unless-stopped
+
+    # JWT_SECRET и прочее — только здесь, chmod 600, в git нет.
+    env_file: .env
+
+    volumes:
+      # SQLite: /app/data в контейнере = /srv/apps/viet-speller/data на
+      # хосте, попадает в ночной бэкап.
+      - ./data:/app/data
+      - ./logs:/app/logs
+
+    networks:
+      - edge
+
+    init: true
+    stop_grace_period: 20s
+    # Nest + SQLite в покое ~120 МБ; запас на пересчёт рейтинга семьи.
+    mem_limit: 384m
+
+    # wget в node:slim нет — проверяем самим node.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  edge:
+    external: true
