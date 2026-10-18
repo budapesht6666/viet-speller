@@ -51,6 +51,8 @@ test('первый урок: проходится, итог сохраняетс
 
   await expect(page.getByRole('heading', { name: 'Урок пройден' })).toBeVisible();
   await expect(page.locator('.stat__value').first()).toHaveText('100%');
+  // Урок без ошибок — ачивка видна сразу на итоге.
+  await expect(page.locator('.done__badges')).toContainText('Без единой ошибки');
   await page.getByRole('button', { name: 'На главную' }).click();
 
   const first = page.locator('.path__lesson').first();

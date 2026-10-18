@@ -9,6 +9,7 @@ import { alphabet, alphabetItems } from './basics/alphabet.js';
 import { numberItems, numbers } from './basics/numbers.js';
 import { toneItems, tones } from './basics/tones.js';
 
+export { achievements } from './achievements.js';
 export { audioFile, audioKey, SPEEDS, VOICE } from './audio.js';
 export type { Speed } from './audio.js';
 

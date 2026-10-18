@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { FamilyModule } from './family/family.module.js';
 import { ProgressModule } from './progress/progress.module.js';
 import { LeaderboardModule } from './leaderboard/leaderboard.module.js';
+import { AchievementsModule } from './achievements/achievements.module.js';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { LeaderboardModule } from './leaderboard/leaderboard.module.js';
     FamilyModule,
     ProgressModule,
     LeaderboardModule,
+    AchievementsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

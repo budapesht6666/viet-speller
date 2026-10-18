@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
+import { Badges } from '../components/Badges.js';
 import { Icon } from '../components/ui.js';
 import { go, type Summary } from '../store/app.js';
 import { t } from '../strings.js';
@@ -30,6 +31,12 @@ export function Done({ summary }: { summary: Summary }) {
           <p class="caption">{t('done.items')}</p>
         </div>
       </section>
+      {summary.newAchievements.length > 0 && (
+        <section class="done__badges">
+          <p class="eyebrow">{t('done.newAchievements')}</p>
+          <Badges earned={new Set(summary.newAchievements)} only={summary.newAchievements} />
+        </section>
+      )}
       {!summary.saved && <p class="caption done__warn">{t('done.saveFailed')}</p>}
       <button class="btn btn--cta done__home" type="button" onClick={() => go({ name: 'home' })}>
         {t('done.home')}

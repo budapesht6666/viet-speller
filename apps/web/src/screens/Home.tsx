@@ -1,5 +1,5 @@
 import { dayKey, dueItems, minutesOn, minutesThisWeek, nextLesson, streak, unlockedLessons } from '@viet/core';
-import { topics } from '@viet/content';
+import { achievements, topics } from '@viet/content';
 import { lessons } from '@viet/content';
 import { useEffect, useState } from 'preact/hooks';
 import { useRegisterSW } from 'virtual:pwa-register/preact';
@@ -7,6 +7,8 @@ import { player } from '../audio/samples.js';
 import { Icon, Status, type StatusState } from '../components/ui.js';
 import { recognitionBlocker } from '../speech/recognizer.js';
 import { dailyGoal, go, GOALS, noMic, noMicUntil, now, progress, setDailyGoal, setNoMic, storage } from '../store/app.js';
+import { Badges } from '../components/Badges.js';
+import { allEarned } from '../store/achievements.js';
 import { account, syncState } from '../store/sync.js';
 import { t } from '../strings.js';
 
@@ -196,6 +198,13 @@ export function Home() {
             </ol>
           </div>
         ))}
+      </section>
+
+      <section class="home__badges">
+        <p class="eyebrow">
+          {t('home.achievements')} · {allEarned.value.size}/{achievements.length}
+        </p>
+        <Badges earned={allEarned.value} />
       </section>
 
       <section class="home__status">

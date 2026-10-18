@@ -12,6 +12,7 @@ import { Player } from './Player.js';
 import { lessonContext, reviewContext, stepsForLesson, stepsForReview } from '../lessons.js';
 import { recognitionBlocker } from '../speech/recognizer.js';
 import { go, newId, noMic, now, progress, record } from '../store/app.js';
+import { allEarned, newlyEarned } from '../store/achievements.js';
 import { syncNow } from '../store/sync.js';
 import { t } from '../strings.js';
 
@@ -30,6 +31,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   const finish = async (state: LessonState, seconds: number) => {
     const grades = Object.fromEntries(lessonGrades(state));
     const acc = accuracy(state);
+    const before = allEarned.value;
     let saved = true;
     try {
       await record({ id: newId(), at: new Date().toISOString(), seconds, type: 'lesson-done', lessonId, grades, accuracy: acc, mic });
@@ -37,7 +39,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
       saved = false;
     }
     void syncNow();
-    go({ name: 'done', summary: { kind: 'lesson', title: lesson.title, lessonId, accuracy: acc, seconds, items: lesson.items.length, saved } });
+    const newAchievements = newlyEarned(before, allEarned.value);
+    go({ name: 'done', summary: { kind: 'lesson', title: lesson.title, lessonId, accuracy: acc, seconds, items: lesson.items.length, saved, newAchievements } });
   };
 
   return <Player lessonId={lessonId} steps={steps} context={lessonContext(lessonId, mic)} mic={mic} onExit={() => go({ name: 'home' })} onFinish={finish} />;
@@ -51,6 +54,7 @@ export function ReviewScreen() {
   const finish = async (state: LessonState, seconds: number) => {
     const grades = lessonGrades(state);
     const each = Math.max(1, Math.round(seconds / Math.max(1, grades.size)));
+    const before = allEarned.value;
     let saved = true;
     try {
       for (const [itemId, grade] of grades) await record({ id: newId(), at: new Date().toISOString(), seconds: each, type: 'review', itemId, grade });
@@ -58,7 +62,8 @@ export function ReviewScreen() {
       saved = false;
     }
     void syncNow();
-    go({ name: 'done', summary: { kind: 'review', title: t('home.review'), accuracy: accuracy(state), seconds, items: grades.size, saved } });
+    const newAchievements = newlyEarned(before, allEarned.value);
+    go({ name: 'done', summary: { kind: 'review', title: t('home.review'), accuracy: accuracy(state), seconds, items: grades.size, saved, newAchievements } });
   };
 
   return <Player lessonId="review" steps={steps} context={reviewContext(ids, mic)} mic={mic} onExit={() => go({ name: 'home' })} onFinish={finish} />;

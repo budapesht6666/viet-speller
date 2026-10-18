@@ -56,6 +56,34 @@ export interface Lesson {
   listenOnly?: boolean;
 }
 
+/** Правило ачивки. Проверяет его `earned` (achievements.ts) по журналу. */
+export type AchievementRule =
+  /** Столько дней подряд с практикой. */
+  | { kind: 'streak'; days: number }
+  /** Все уроки темы пройдены. */
+  | { kind: 'topic'; topicId: string }
+  /** Урок без единой ошибки. */
+  | { kind: 'perfect-lesson' }
+  /** Столько слов и фраз в повторении (есть карточка). */
+  | { kind: 'cards'; count: number }
+  /** Урок с микрофоном, в котором фраза засчитана без ошибок. */
+  | { kind: 'phrase-spoken' }
+  /** Ежедневная тренировка — столько раз. */
+  | { kind: 'reviews'; count: number }
+  /** Вся семья (от двух человек) занималась в один день. */
+  | { kind: 'family-same-day' }
+  /** Семья вместе набрала столько минут за неделю. */
+  | { kind: 'family-week'; minutes: number };
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  /** Иконка Streamline: набор и имя. Эмодзи не используются нигде. */
+  icon: { set: 'ui' | 'objects'; name: string };
+  rule: AchievementRule;
+}
+
 export interface Topic {
   id: string;
   title: string;

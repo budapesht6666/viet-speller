@@ -310,3 +310,8 @@
 .done__home {
   margin-top: var(--space-4);
 }
+
+.home__badges .eyebrow,
+.done__badges .eyebrow {
+  margin-bottom: var(--space-3);
+}

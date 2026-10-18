@@ -87,6 +87,8 @@ export const strings = {
   'done.items': 'слов и фраз',
   'done.home': 'На главную',
   'done.saveFailed': 'Не удалось сохранить итог на телефоне',
+  'done.newAchievements': 'Новые ачивки',
+  'home.achievements': 'Ачивки',
 
   'sync.guest': 'Прогресс только на этом телефоне — войди, чтобы попасть в семейный рейтинг',
   'sync.checking': 'Проверяю вход…',

@@ -160,3 +160,15 @@ describe('семья, синхронизация, рейтинг', () => {
     expect(res.body.standings[0]).toMatchObject({ streak: 1, lessonsDone: 1 });
   });
 });
+
+describe('ачивки', () => {
+  it('личные — из своего журнала, семейные — из журналов всей семьи', async () => {
+    // Павел и Аня из прошлых сценариев занимались сегодня оба.
+    const anna = request.agent(app.getHttpServer());
+    await anna.post('/api/auth/login').send({ login: 'anna', password: 'long-password' });
+    const res = await anna.get('/api/achievements').expect(200);
+    expect(res.body.earned).toContain('family-day');
+    expect(res.body.family).toContain('family-day');
+    expect(res.body.earned).not.toContain('streak-3');
+  });
+});

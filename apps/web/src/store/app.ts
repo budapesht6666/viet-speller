@@ -34,6 +34,8 @@ export interface Summary {
   items: number;
   /** Итог записан в журнал. Нет — это видно на экране, а не теряется молча. */
   saved: boolean;
+  /** Ачивки, полученные этим уроком. */
+  newAchievements: string[];
 }
 
 export type Route =

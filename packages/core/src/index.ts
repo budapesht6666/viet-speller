@@ -1,3 +1,4 @@
+export * from './achievements.js';
 export * from './lesson.js';
 export * from './matcher.js';
 export * from './numbers.js';
