@@ -1,3 +1,4 @@
+export * from './lesson.js';
 export * from './matcher.js';
 export * from './numbers.js';
 export * from './tone.js';
