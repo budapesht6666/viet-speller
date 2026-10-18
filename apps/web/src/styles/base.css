@@ -297,6 +297,41 @@ svg {
   font-size: var(--text-small);
 }
 
+/* ── Поле ввода ────────────────────────────────────────────────────────── */
+
+/* Кегль не меньше 16 px: на меньшем iOS Safari приближает страницу при
+   фокусе, и вёрстка уезжает. */
+.input {
+  min-height: 52px;
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-paper);
+  font: inherit;
+  font-size: var(--text-body);
+  color: var(--c-text);
+}
+
+.input:focus {
+  border-color: var(--c-accent);
+  outline: none;
+}
+
+.input--code {
+  font-weight: var(--weight-black);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+}
+
+.form__error {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--c-miss-wash);
+  color: var(--c-text);
+  font-weight: var(--weight-semibold);
+}
+
 /* ── Иконка ────────────────────────────────────────────────────────────── */
 
 .icon {

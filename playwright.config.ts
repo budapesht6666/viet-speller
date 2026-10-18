@@ -16,10 +16,20 @@ export default defineConfig({
     // Service worker в тестах только мешает: кэширует прошлую сборку.
     serviceWorkers: 'block',
   },
-  webServer: {
-    command: 'npm run dev -w @viet/web',
-    url: 'http://localhost:5180',
-    reuseExistingServer: true,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: 'npm run dev -w @viet/web',
+      url: 'http://localhost:5180',
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+    {
+      // Настоящий бэкенд на своей базе: e2e семьи и синхронизации. База
+      // пересоздаётся на каждый запуск (scripts/e2e-api.mjs).
+      command: 'node scripts/e2e-api.mjs',
+      url: 'http://localhost:3000/health',
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+  ],
 });

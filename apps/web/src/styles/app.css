@@ -10,6 +10,120 @@
   padding-top: var(--space-6);
 }
 
+.home__title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.home__family {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: var(--tap-min);
+}
+
+/* ── Семья ─────────────────────────────────────────────────────────────── */
+
+.family {
+  gap: var(--space-5);
+}
+
+.family .lesson__top .h2 {
+  flex: 1;
+}
+
+.family__invite {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.family__invite .eyebrow,
+.family__invite .caption {
+  margin: 0;
+}
+
+.family__code {
+  margin: 0;
+  font-size: var(--text-display);
+  font-weight: var(--weight-black);
+  letter-spacing: var(--tracking-micro);
+  font-variant-numeric: var(--numeric);
+}
+
+.board__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.board__row {
+  display: grid;
+  grid-template-columns: var(--space-8) 1fr auto;
+  grid-template-areas:
+    'place name minutes'
+    'place meta minutes';
+  align-items: center;
+  column-gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+}
+
+.board__row[data-me='true'] {
+  box-shadow: inset 0 0 0 2px var(--c-accent);
+}
+
+.board__place {
+  grid-area: place;
+  font-weight: var(--weight-black);
+  color: var(--c-text-faint);
+}
+
+.board__name {
+  grid-area: name;
+  font-weight: var(--weight-bold);
+}
+
+.board__meta {
+  grid-area: meta;
+}
+
+.board__minutes {
+  grid-area: minutes;
+  text-align: right;
+}
+
+/* ── Форма ─────────────────────────────────────────────────────────────── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.form .lead {
+  margin: 0;
+}
+
+.form .seg {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
 .goal {
   display: flex;
   align-items: center;

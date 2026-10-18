@@ -7,6 +7,7 @@ import { player } from '../audio/samples.js';
 import { Icon, Status, type StatusState } from '../components/ui.js';
 import { recognitionBlocker } from '../speech/recognizer.js';
 import { dailyGoal, go, GOALS, noMic, noMicUntil, now, progress, setDailyGoal, setNoMic, storage } from '../store/app.js';
+import { account, syncState } from '../store/sync.js';
 import { t } from '../strings.js';
 
 /** Сеть. Без неё нет распознавания — это показываем, а не молча зависаем. */
@@ -64,6 +65,18 @@ function AppUpdate() {
   return <Status state="wait">{t('app.swPending')}</Status>;
 }
 
+/** Синхронизация с семьёй: у каждого её состояния свой вид. */
+function SyncStatus() {
+  const a = account.value;
+  const s = syncState.value;
+  if (a.state === 'guest') return <Status state="off">{t('sync.guest')}</Status>;
+  if (a.state === 'unknown') return <Status state="wait">{t('sync.checking')}</Status>;
+  if (a.state === 'offline' || s.state === 'offline') return <Status state="wait">{s.pending ? `${t('sync.offlinePending')}: ${s.pending}` : t('sync.offline')}</Status>;
+  if (s.state === 'syncing') return <Status state="wait">{t('sync.syncing')}</Status>;
+  if (s.state === 'error') return <Status state="off">{t('sync.error')}</Status>;
+  return <Status state="ok">{t('sync.ok')}</Status>;
+}
+
 const SPEECH: Record<ReturnType<typeof recognitionBlocker>, { state: StatusState; text: string }> = {
   none: { state: 'ok', text: t('speech.ok') },
   insecure: { state: 'off', text: t('speech.insecure') },
@@ -90,7 +103,13 @@ export function Home() {
   return (
     <main class="screen home">
       <header class="home__hero">
-        <h1 class="display">{t('appName')}</h1>
+        <div class="home__title">
+          <h1 class="display">{t('appName')}</h1>
+          <button class="home__family" type="button" onClick={() => go({ name: 'family' })} aria-label={t('home.family')}>
+            <Icon name="user-multiple-accounts" size={32} />
+            <span class="caption">{t('home.family')}</span>
+          </button>
+        </div>
         <p class="lead">{t('home.lead')}</p>
       </header>
 
@@ -184,6 +203,7 @@ export function Home() {
         <Status state={speech.state}>{speech.text}</Status>
         <Status state={online ? 'ok' : 'off'}>{online ? t('net.online') : t('net.offline')}</Status>
         <Status state={storage.value === 'idb' ? 'ok' : storage.value === 'memory' ? 'off' : 'wait'}>{t(`storage.${storage.value}`)}</Status>
+        <SyncStatus />
         <AppUpdate />
       </section>
     </main>

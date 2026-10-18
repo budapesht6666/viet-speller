@@ -12,6 +12,7 @@ import { Player } from './Player.js';
 import { lessonContext, reviewContext, stepsForLesson, stepsForReview } from '../lessons.js';
 import { recognitionBlocker } from '../speech/recognizer.js';
 import { go, newId, noMic, now, progress, record } from '../store/app.js';
+import { syncNow } from '../store/sync.js';
 import { t } from '../strings.js';
 
 /** Говорить можно: браузер умеет, есть сеть и не включено «не могу говорить». */
@@ -35,6 +36,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
     } catch {
       saved = false;
     }
+    void syncNow();
     go({ name: 'done', summary: { kind: 'lesson', title: lesson.title, lessonId, accuracy: acc, seconds, items: lesson.items.length, saved } });
   };
 
@@ -55,6 +57,7 @@ export function ReviewScreen() {
     } catch {
       saved = false;
     }
+    void syncNow();
     go({ name: 'done', summary: { kind: 'review', title: t('home.review'), accuracy: accuracy(state), seconds, items: grades.size, saved } });
   };
 
