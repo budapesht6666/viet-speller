@@ -1,6 +1,7 @@
 import { Done } from './screens/Done.js';
 import { Family } from './screens/Family.js';
 import { Home } from './screens/Home.js';
+import { Phrasebook } from './screens/Phrasebook.js';
 import { LessonScreen, ReviewScreen } from './screens/Sessions.js';
 import { route } from './store/app.js';
 
@@ -16,6 +17,8 @@ export function App() {
       return <Done summary={r.summary} />;
     case 'family':
       return <Family />;
+    case 'phrasebook':
+      return <Phrasebook />;
     default:
       return <Home />;
   }

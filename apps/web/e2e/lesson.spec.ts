@@ -101,3 +101,30 @@ test('без микрофона урок не просит говорить', as
   await expect(page.locator('main.lesson')).toBeVisible();
   await expect(page.getByText('Урок без микрофона')).toBeVisible();
 });
+
+test('разговорник: пройденное ищется по-русски, показывается собеседнику, избранное сохраняется', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Начать первый урок' }).click();
+  await playLesson(page);
+  await page.getByRole('button', { name: 'На главную' }).click();
+
+  await page.getByRole('button', { name: 'Разговорник' }).click();
+  await expect(page.locator('.book__entry')).toHaveCount(5);
+  await page.getByPlaceholder('Поиск по-русски или по-вьетнамски').fill('далеко');
+  await expect(page.locator('.book__entry')).toHaveCount(1);
+  // Поиск по-вьетнамски — и без знаков: на телефоне без вьетнамской клавиатуры их не набрать.
+  await page.getByPlaceholder('Поиск по-русски или по-вьетнамски').fill('ve');
+  await expect(page.locator('.book__vi')).toHaveText(['về']);
+
+  await page.locator('.book__fav').first().click();
+  await page.locator('.book__entry').first().click();
+  await expect(page.locator('.show__vi')).toHaveText('về');
+  await page.getByRole('button', { name: 'Перевернуть для собеседника' }).click();
+  await expect(page.locator('.show__card')).toHaveAttribute('data-flipped', 'true');
+  await page.getByRole('button', { name: 'Закрыть' }).click();
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Разговорник' }).click();
+  await page.getByRole('switch', { name: 'Только избранное' }).click();
+  await expect(page.locator('.book__vi')).toHaveText(['về']);
+});

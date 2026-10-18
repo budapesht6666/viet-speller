@@ -82,6 +82,7 @@
   --font-sans: 'Nunito Variable', 'Nunito', -apple-system, BlinkMacSystemFont,
     'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
+  --text-show: 3.5rem; /* 56px — фраза в режиме «показать собеседнику» */
   --text-phrase: 2.5rem; /* 40px — вьетнамская фраза в шаге урока и в разговорнике */
   --text-display: 2.125rem; /* 34px — заголовок экрана */
   --text-h2: 1.375rem; /* 22px — заголовок блока */

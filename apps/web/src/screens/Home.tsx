@@ -107,10 +107,16 @@ export function Home() {
       <header class="home__hero">
         <div class="home__title">
           <h1 class="display">{t('appName')}</h1>
-          <button class="home__family" type="button" onClick={() => go({ name: 'family' })} aria-label={t('home.family')}>
-            <Icon name="user-multiple-accounts" size={32} />
-            <span class="caption">{t('home.family')}</span>
-          </button>
+          <div class="home__links">
+            <button class="home__family" type="button" onClick={() => go({ name: 'phrasebook' })}>
+              <Icon name="book-1" size={32} />
+              <span class="caption">{t('home.phrasebook')}</span>
+            </button>
+            <button class="home__family" type="button" onClick={() => go({ name: 'family' })}>
+              <Icon name="user-multiple-accounts" size={32} />
+              <span class="caption">{t('home.family')}</span>
+            </button>
+          </div>
         </div>
         <p class="lead">{t('home.lead')}</p>
       </header>

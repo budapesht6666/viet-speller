@@ -315,3 +315,130 @@
 .done__badges .eyebrow {
   margin-bottom: var(--space-3);
 }
+
+.home__links {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ── Разговорник ───────────────────────────────────────────────────────── */
+
+.book {
+  gap: var(--space-4);
+}
+
+.book__title {
+  flex: 1;
+}
+
+.book > .caption {
+  margin: 0;
+}
+
+.book__group .eyebrow {
+  margin-bottom: var(--space-2);
+}
+
+.book__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.book__row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.book__entry {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  text-align: left;
+}
+
+.book__vi {
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-phrase);
+}
+
+.book__fav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap-min);
+  border-radius: var(--radius-md);
+}
+
+.book__fav[aria-pressed='false'] .icon {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+/* Режим показа: фраза — собеседнику, на весь экран. */
+.show {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  flex-direction: column;
+  max-width: var(--app-width);
+  margin-inline: auto;
+  padding: calc(env(safe-area-inset-top) + var(--space-6)) var(--gutter)
+    calc(env(safe-area-inset-bottom) + var(--space-4));
+  background: var(--c-paper);
+}
+
+.show__card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-6);
+  text-align: center;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+/* Телефон лежит на столе между двумя людьми: собеседник читает фразу не
+   вверх ногами. */
+.show__card[data-flipped='true'] {
+  transform: rotate(180deg);
+}
+
+.show__vi {
+  margin: 0;
+  font-size: var(--text-show);
+  font-weight: var(--weight-black);
+  line-height: var(--leading-phrase);
+  overflow-wrap: anywhere;
+}
+
+.show__ru {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--c-text-muted);
+}
+
+.show__bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.show__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.show__actions .btn {
+  flex: 1;
+}
