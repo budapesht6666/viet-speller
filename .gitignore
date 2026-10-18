@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+
+# Секреты — только в .env, в репозитории .env.example
+.env
+.env.*
+!.env.example
+
+# База разработки
+apps/api/data/
+*.db
+*.db-journal
+
+# Кеш озвучки до отбора голоса
+.tts-cache/
