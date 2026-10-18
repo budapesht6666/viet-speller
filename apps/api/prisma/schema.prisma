@@ -1,7 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Схема базы Viet Speller. SQLite — файл в data/ (по vps-ops он попадает
+// в ночной бэкап). Прогресс хранится журналом событий: состояние — карточки,
+// серия, минуты — сервер вычисляет из него тем же кодом, что телефон
+// (packages/core/src/progress.ts), и не хранит.
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +10,45 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+}
+
+model Family {
+  id         String   @id @default(uuid())
+  name       String
+  /// Код-приглашение: по нему остальные входят в семью.
+  inviteCode String   @unique
+  createdAt  DateTime @default(now())
+  members    User[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  /// Логин для входа — в нижнем регистре.
+  login        String   @unique
+  /// Как показывать в семейном рейтинге.
+  name         String
+  /// argon2id.
+  passwordHash String
+  familyId     String
+  family       Family   @relation(fields: [familyId], references: [id])
+  createdAt    DateTime @default(now())
+  events       Event[]
+}
+
+model Event {
+  /// Порядок приёма на сервере — курсор синхронизации: «дай всё после seq».
+  seq        Int      @id @default(autoincrement())
+  /// UUID, выданный телефоном. Повторная отправка того же события ничего не удваивает.
+  id         String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  type       String
+  /// Время события на телефоне.
+  at         DateTime
+  seconds    Int
+  /// Остальные поля события как JSON: схема события живёт в packages/core.
+  payload    String
+  receivedAt DateTime @default(now())
+
+  @@index([userId, seq])
 }

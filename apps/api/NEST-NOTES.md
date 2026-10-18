@@ -19,9 +19,11 @@
 каких модулей он зависит (`imports`). Корень — `AppModule`
 (`src/app.module.ts`), из него Nest строит дерево зависимостей.
 
-У нас: `AppModule`, `PrismaModule`, `HealthModule`. Дальше по `PLAN.md`
-(этап 6) — `AuthModule`, `FamilyModule`, `ProgressModule`,
-`AchievementsModule`, `LeaderboardModule`: по модулю на предметную область.
+У нас: `AppModule`, `PrismaModule`, `HealthModule`, `UsersModule`,
+`AuthModule`, `FamilyModule`, `ProgressModule`, `LeaderboardModule` — по
+модулю на предметную область. Модуль импортирует только то, чем
+пользуется: `LeaderboardModule` берёт `ProgressModule` ради журнала, а
+`AuthModule` — `UsersModule` и `FamilyModule`.
 
 ## Провайдер и внедрение зависимостей — `@Injectable`, конструктор
 
@@ -94,7 +96,8 @@ Prisma 7 ходит в SQLite через драйвер-адаптер `@prisma/
 ## Контроллер и маршруты — `@Controller`, `@Get`
 
 Контроллер отвечает на HTTP-запросы. `@Controller('health')` задаёт
-общую часть пути, `@Get()` — метод. У нас пока один: `HealthController`.
+общую часть пути, `@Get()` — метод. Контроллер тонкий: принимает DTO,
+зовёт сервис, возвращает результат. Логика — в сервисах.
 
 ## Глобальный префикс — `setGlobalPrefix`
 
@@ -116,6 +119,97 @@ e2e-теста — тест проверяет ту же раскладку пу
 Рецепт — https://docs.nestjs.com/recipes/serve-static. Один контейнер, один
 домен, cookie без CORS. Из раздачи исключены `/api/{*splat}` и `/health`:
 иначе неизвестный путь API вернул бы `index.html` с кодом 200.
+
+## Guard — `CanActivate`, глобальный через `APP_GUARD`
+
+Guard решает, пускать ли запрос в обработчик. Он видит контекст выполнения:
+какой контроллер, какой метод, какие у них метаданные.
+
+У нас два, оба глобальные — объявлены провайдером `APP_GUARD`:
+
+- `AuthGuard` (`src/auth/auth.guard.ts`) — проверяет JWT из cookie
+  сессии и кладёт `{ id }` в `request.user`. Зарегистрирован в
+  `AuthModule`, рядом с собой, как советует документация.
+- `ThrottlerGuard` из `@nestjs/throttler` — лимит запросов с адреса
+  (`app.module.ts`).
+
+Глобальный guard выбран сознательно: закрыто всё, кроме помеченного
+`@Public()`. Забытая пометка закрывает маршрут, а не открывает.
+
+Guard работает до pipes: неавторизованный запрос не доходит даже до
+проверки DTO и получает 401, а не 400.
+
+## Декораторы: метаданные и параметр
+
+Свой декоратор — способ сказать фреймворку что-то о маршруте, не меняя
+код обработчика.
+
+- `@Public()` (`src/auth/public.decorator.ts`) — `SetMetadata` кладёт
+  метку на метод или класс, guard читает её через `Reflector`
+  (`getAllAndOverride` — метка на методе важнее метки на классе).
+- `@CurrentUser()` (`src/auth/current-user.decorator.ts`) —
+  `createParamDecorator`: параметр обработчика, который достаёт id из
+  запроса. Контроллеры не лезут в `request.user` руками.
+- `@Throttle()` — тот же механизм метаданных, только из библиотеки:
+  вход и регистрация затянуты до 10 попыток в минуту.
+
+## DTO и `ValidationPipe`
+
+DTO — класс, описывающий тело запроса декораторами `class-validator`
+(`@IsString`, `@Length`, `@IsUUID`…). Глобальный `ValidationPipe`
+(`src/setup.ts`) превращает JSON в экземпляр класса и проверяет его до
+обработчика. Ошибка — 400 со списком нарушений.
+
+Настройки: `whitelist` выкидывает поля без декораторов,
+`forbidNonWhitelisted` превращает их в ошибку — лишнее поле в теле
+запроса значит, что клиент и сервер разошлись, и об этом лучше узнать
+сразу. `transform` даёт в обработчик экземпляр DTO, а не голый объект.
+
+Массив объектов валидируется только через обёртку: `SyncDto.events` с
+`@ValidateNested({ each: true })` и `@Type(() => EventDto)` — TypeScript
+не сохраняет тип элементов массива в метаданных, и без `@Type` проверки
+элементов не случилось бы вовсе. Поля, нужные одному типу события, —
+`@ValidateIf` (`src/progress/progress.dto.ts`).
+
+## Исключения
+
+`ConflictException` (409), `UnauthorizedException` (401),
+`NotFoundException` (404) — встроенные HTTP-исключения: брошенное из
+сервиса превращается в ответ с кодом и сообщением само. Свой exception
+filter не понадобился.
+
+## `JwtModule.registerAsync`
+
+Тот же приём, что `ServeStaticModule.forRootAsync`: секрет берётся из
+`ConfigService`, а не из `process.env` при импорте. `JWT_SECRET` в
+`.env`, в репозитории — `.env.example`.
+
+## Cookies — `@Res({ passthrough: true })`
+
+`cookie-parser` подключён в `setup.ts` и наполняет `request.cookies`.
+Поставить cookie можно только через объект ответа Express, поэтому
+`@Res()`. С `passthrough: true` Nest продолжает обрабатывать ответ сам:
+возвращённое из метода значение уходит в JSON, как без `@Res()`. Без
+`passthrough` ответ пришлось бы отправлять руками.
+
+Сессия — JWT в `httpOnly`-cookie (`src/auth/session.ts`): скрипт
+страницы её не прочитает, а фронтенд на том же домене, поэтому CORS не нужен.
+
+## Swagger — `@nestjs/swagger`
+
+Документация API на `/api/docs`. DTO описаны `@ApiProperty` вручную, без
+CLI-плагина Swagger: так в коде видно, что попадает в документацию.
+
+## Prisma: миграции
+
+- `npx prisma migrate dev --name <что>` — после правки схемы, создаёт
+  SQL в `prisma/migrations/` (коммитится).
+- `npx prisma migrate deploy` — накатывает миграции на базу; его же
+  вызывает e2e-тест на временной базе, и так миграции проверяются на
+  каждом коммите.
+- **Prisma 7 после `migrate dev` клиент не генерирует** — `npm run
+  generate`, иначе TypeScript не видит новых моделей (`Property 'user'
+  does not exist on type 'PrismaService'`).
 
 ## Тесты
 

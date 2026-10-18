@@ -1,9 +1,16 @@
 import { resolve } from 'node:path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { HealthModule } from './health/health.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { UsersModule } from './users/users.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { FamilyModule } from './family/family.module.js';
+import { ProgressModule } from './progress/progress.module.js';
+import { LeaderboardModule } from './leaderboard/leaderboard.module.js';
 
 @Module({
   imports: [
@@ -11,6 +18,9 @@ import { PrismaModule } from './prisma/prisma.module.js';
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     HealthModule,
+    // Лимит запросов с одного адреса — общий для всего API. Вход и
+    // регистрация затянуты сильнее (@Throttle в AuthController).
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     /**
      * Nest раздаёт и собранный фронтенд: один контейнер, один домен, cookie
      * без CORS (PLAN.md, этап 6). Путь — из конфигурации, а не зашит: в
@@ -30,6 +40,12 @@ import { PrismaModule } from './prisma/prisma.module.js';
         },
       ],
     }),
+    UsersModule,
+    AuthModule,
+    FamilyModule,
+    ProgressModule,
+    LeaderboardModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

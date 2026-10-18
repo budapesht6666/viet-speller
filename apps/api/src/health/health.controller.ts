@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { HealthCheck, HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus';
+import { Public } from '../auth/public.decorator.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -7,8 +8,9 @@ import { PrismaService } from '../prisma/prisma.service.js';
  * открывается база: живой процесс с недоступным файлом SQLite — не здоровье,
  * а сломанное приложение, которое докер иначе считал бы рабочим.
  *
- * Без префикса `/api` — см. main.ts.
+ * Без префикса `/api` — см. setup.ts. Открыт без входа: его дёргает докер.
  */
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(

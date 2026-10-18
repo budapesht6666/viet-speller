@@ -44,6 +44,7 @@
     "better-sqlite3@12.11.1": true,
     "prisma@7.10.1": true,
     "@prisma/engines@7.10.1": true,
-    "cloudflared@0.7.3": true
+    "cloudflared@0.7.3": true,
+    "@scarf/scarf": false
   }
 }
