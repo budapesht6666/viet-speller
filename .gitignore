@@ -14,3 +14,7 @@ apps/api/data/
 
 # Кеш озвучки до отбора голоса
 .tts-cache/
+
+# Playwright
+test-results/
+playwright-report/

@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Замер vi-VN</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Замер vi-VN">
+<meta name="theme-color" content="#0e1116">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%230e1116'/%3E%3Ctext x='90' y='118' font-family='sans-serif' font-size='72' font-weight='700' fill='%2358a6ff' text-anchor='middle'%3Evi%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Замер vi-VN","short_name":"Замер vi","start_url":".","display":"standalone","background_color":"%230e1116","theme_color":"%230e1116"}'>
+<style>
+  :root{
+    --bg:#0e1116; --card:#161b22; --line:#2a313c; --fg:#e6edf3; --dim:#8b949e;
+    --ok:#3fb950; --bad:#f85149; --warn:#d29922; --acc:#58a6ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 12px);
+    -webkit-text-size-adjust:100%; max-width:560px; margin:0 auto;
+  }
+  h1{font-size:19px;margin:0 0 4px}
+  h2{font-size:14px;margin:0 0 10px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
+  .row:last-child{border-bottom:0}
+  .row b{font-weight:600;color:var(--dim);flex:0 0 auto}
+  .row span{text-align:right;word-break:break-word;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)} .dim{color:var(--dim)}
+  button,select{
+    -webkit-appearance:none; appearance:none; width:100%; margin:6px 0; padding:14px 16px;
+    background:#21262d; color:var(--fg); border:1px solid var(--line); border-radius:10px;
+    font-size:16px; font-weight:600; cursor:pointer; touch-action:manipulation; font-family:inherit;
+  }
+  button:active{background:#2d333b}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#04101f}
+  button.listening{background:var(--bad);border-color:var(--bad);color:#fff}
+  button[disabled]{opacity:.45}
+  .btns{display:flex;gap:8px}
+  .btns > *{flex:1}
+  label{display:block;font-size:13px;color:var(--dim);margin-top:8px}
+  #counter{color:var(--dim);font-size:13px}
+  #target{font-size:40px;font-weight:700;margin:6px 0 2px;line-height:1.15}
+  #ru{color:var(--dim);font-size:15px}
+  #heard{min-height:52px;font-size:22px;font-weight:600;padding:10px;background:#0b0e13;border-radius:8px;border:1px solid var(--line);word-break:break-word;margin-top:12px}
+  #heard .interim{color:var(--dim);font-weight:400}
+  #verdict{min-height:24px;margin-top:8px;font-weight:600}
+  #srState{font-size:14px;margin:6px 0 0}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td{padding:4px 4px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top}
+  td:first-child{font-weight:600;white-space:nowrap}
+  #log{
+    background:#0b0e13;border:1px solid var(--line);border-radius:8px;padding:10px;
+    font-family:ui-monospace,Menlo,monospace;font-size:11.5px;line-height:1.5;
+    height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word;
+  }
+  .hint{color:var(--dim);font-size:13px;margin:6px 0 0}
+  pre{white-space:pre-wrap;font-size:12px;background:#0b0e13;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:300px;overflow:auto}
+</style>
+</head>
+<body>
+
+<h1>Замер распознавания vi-VN</h1>
+<p class="hint">Протокол — research/VI-PROBE-CHECKLIST.md. Сначала прогон во вкладке, потом с иконки домашнего экрана.</p>
+
+<div class="card">
+  <h2>Окружение</h2>
+  <div id="env"></div>
+</div>
+
+<div class="card">
+  <h2>Перед замером</h2>
+  <label for="speaker">Кто говорит</label>
+  <select id="speaker">
+    <option value="learner">я сам (учу язык)</option>
+    <option value="native">носитель языка</option>
+    <option value="sample-remote">образец с другого устройства</option>
+    <option value="sample-self">образец с этого же телефона</option>
+  </select>
+  <label for="voice">Голос образца</label>
+  <select id="voice">
+    <option value="vi-VN-HoaiMyNeural">HoaiMy (женский)</option>
+    <option value="vi-VN-NamMinhNeural">NamMinh (мужской)</option>
+  </select>
+  <button class="primary" id="startSession">Включить распознавание</button>
+  <div id="srState" class="dim">распознавание выключено</div>
+  <p class="hint">Сессия одна на весь замер, как будет в приложении. Включается касанием — иначе Safari не даст микрофон.</p>
+</div>
+
+<div class="card" id="promptCard">
+  <div id="counter"></div>
+  <div id="target"></div>
+  <div id="ru"></div>
+  <div class="btns">
+    <button id="play">Образец</button>
+    <button class="primary" id="listen" disabled>Слушать</button>
+  </div>
+  <div id="heard"><span class="dim">—</span></div>
+  <div id="verdict"></div>
+  <div class="btns">
+    <button id="prev">Назад</button>
+    <button id="next">Дальше</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Итог</h2>
+  <div id="summary" class="dim">пока пусто</div>
+  <button class="primary" id="copyReport">Скопировать отчёт</button>
+  <button id="reset">Начать замер заново</button>
+</div>
+
+<div class="card">
+  <h2>Журнал</h2>
+  <div id="log"></div>
+  <button id="copyLog">Скопировать журнал</button>
+</div>
+
+<audio id="audio" preload="auto" playsinline></audio>
+
+<script type="module">
+import { verdict, verdictLabel } from './vi-probe-verdict.mjs';
+
+const $ = (id) => document.getElementById(id);
+const STORE = 'vi-probe-v1';
+
+/* ---------- журнал ---------- */
+const t0 = performance.now();
+const now = () => (performance.now() - t0) / 1000;
+const lines = [];
+function log(msg, cls) {
+  const line = `[${now().toFixed(2)}] ${msg}`;
+  lines.push(line);
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.textContent = line;
+  $('log').appendChild(d);
+  $('log').scrollTop = $('log').scrollHeight;
+}
+addEventListener('error', (e) => log(`JS ERROR: ${e.message} @${e.lineno}`, 'bad'));
+addEventListener('unhandledrejection', (e) => log(`UNHANDLED: ${e.reason}`, 'bad'));
+document.addEventListener('visibilitychange', () => log(`visibility -> ${document.visibilityState}`, 'dim'));
+
+function rows(target, list) {
+  const el = $(target);
+  el.replaceChildren();
+  for (const [k, v, cls] of list) {
+    const d = document.createElement('div'); d.className = 'row';
+    const b = document.createElement('b'); b.textContent = k;
+    const s = document.createElement('span'); s.textContent = v; if (cls) s.className = cls;
+    d.append(b, s); el.append(d);
+  }
+}
+
+/* ---------- окружение ---------- */
+const mm = (q) => matchMedia(q).matches;
+const standalone = navigator.standalone === true || mm('(display-mode: standalone)');
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+const env = {
+  mode: standalone ? 'STANDALONE' : 'browser',
+  secure: window.isSecureContext,
+  sr: SR ? (window.SpeechRecognition ? 'да' : 'да (webkit)') : 'НЕТ',
+  phrases: typeof window.SpeechRecognitionPhrase !== 'undefined',
+  ua: navigator.userAgent,
+};
+rows('env', [
+  ['Режим запуска', standalone ? 'с иконки (standalone)' : 'вкладка браузера', standalone ? 'warn' : 'ok'],
+  ['isSecureContext', String(env.secure), env.secure ? 'ok' : 'bad'],
+  ['SpeechRecognition', env.sr, SR ? 'ok' : 'bad'],
+  ['contextual biasing (phrases)', env.phrases ? 'да' : 'нет', 'dim'],
+  ['язык браузера', navigator.language],
+  ['UA', env.ua],
+]);
+log(`=== VI PROBE === mode=${env.mode} secure=${env.secure} SR=${env.sr} phrases=${env.phrases}`);
+log(`UA=${env.ua}`);
+if (!env.secure) log('Не HTTPS: распознавания не будет. Открой через туннель.', 'bad');
+else if (!SR) log('Конструктора SpeechRecognition нет при https — браузер его не умеет.', 'bad');
+
+/* ---------- данные ---------- */
+const { groups, prompts } = await (await fetch('./vi-probe-prompts.json')).json();
+let manifest = {};
+try { manifest = await (await fetch('./audio/manifest.json')).json(); }
+catch { log('нет audio/manifest.json — образцов не будет (npm run tts:probe)', 'warn'); }
+
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch { /* приватный режим */ }
+const results = saved.results || {};   // id → { heard, verdict, label, timings, speaker, attempts }
+let index = Math.min(saved.index || 0, prompts.length - 1);
+if (saved.speaker) $('speaker').value = saved.speaker;
+if (saved.voice) $('voice').value = saved.voice;
+function persist() {
+  try {
+    localStorage.setItem(STORE, JSON.stringify({ results, index, speaker: $('speaker').value, voice: $('voice').value }));
+  } catch { /* не страшно: отчёт можно скопировать */ }
+}
+$('speaker').onchange = () => { persist(); log(`говорит: ${$('speaker').value}`); };
+$('voice').onchange = () => { persist(); log(`голос образца: ${$('voice').value}`); };
+
+/* ---------- распознавание: одна сессия на весь замер ---------- */
+let rec = null, wanted = false, sessionId = 0;
+const sessionText = new Map();   // сессия → полная расшифровка (все результаты подряд)
+let win = null;                  // открытое окно задания
+
+function setSrState(text, cls) { $('srState').textContent = text; $('srState').className = cls || 'dim'; }
+
+function spawn() {
+  const r = new SR();
+  r.lang = 'vi-VN';
+  r.continuous = true;
+  r.interimResults = true;
+  r.maxAlternatives = 5;
+  r.onstart = () => { sessionId++; sessionText.set(sessionId, ''); log(`SR onstart, сессия #${sessionId}`, 'ok'); setSrState('слушает (сессия #' + sessionId + ')', 'ok'); $('listen').disabled = false; };
+  r.onaudiostart = () => log('SR onaudiostart', 'dim');
+  r.onspeechstart = () => { log('SR onspeechstart', 'dim'); if (win && win.speechAt == null) win.speechAt = now(); };
+  r.onspeechend = () => log('SR onspeechend', 'dim');
+  r.onnomatch = () => log('SR onnomatch', 'warn');
+  r.onerror = (e) => {
+    log(`SR ONERROR: ${e.error}${e.message ? ' — ' + e.message : ''}`, e.error === 'no-speech' || e.error === 'aborted' ? 'dim' : 'bad');
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { wanted = false; setSrState('микрофон запрещён: ' + e.error, 'bad'); }
+    if (e.error === 'network') setSrState('нет сети у распознавания', 'bad');
+  };
+  r.onend = () => {
+    log(`SR onend — сессия #${sessionId} закончилась`, 'warn');
+    rec = null;
+    if (!wanted) { setSrState('распознавание выключено'); $('listen').disabled = true; return; }
+    setTimeout(() => { if (wanted) { log('авторестарт'); spawn(); } }, 150);
+  };
+  r.onresult = (e) => {
+    const t = now();
+    const parts = [];
+    let anyFinal = false;
+    const desc = [];
+    for (let i = 0; i < e.results.length; i++) {
+      const res = e.results[i];
+      parts.push(res[0].transcript);
+      if (i >= e.resultIndex) {
+        const alts = [];
+        for (let j = 0; j < res.length; j++) alts.push(`"${res[j].transcript.trim()}"(${typeof res[j].confidence === 'number' ? res[j].confidence.toFixed(2) : '—'})`);
+        desc.push(`${res.isFinal ? 'FINAL' : 'interim'} #${i} alts=${res.length}: ${alts.join('  ')}`);
+        if (res.isFinal) anyFinal = true;
+      }
+    }
+    // results.length и resultIndex пишем всегда: от того, растёт ли один
+    // результат или появляются новые, зависит разбор хвоста в приложении.
+    log(`onresult len=${e.results.length} idx=${e.resultIndex} | ${desc.join(' | ')}`, anyFinal ? 'ok' : 'dim');
+    sessionText.set(sessionId, parts.join(' '));
+    if (win) onWindowEvent(t, anyFinal);
+  };
+  rec = r;
+  try { r.start(); log('SR.start() вызван'); }
+  catch (err) { log(`SR.start() бросил: ${err.name} ${err.message}`, 'bad'); }
+}
+
+$('startSession').onclick = () => {
+  if (!SR) { log('SpeechRecognition нет — нечего включать', 'bad'); return; }
+  if (wanted) { wanted = false; try { rec && rec.stop(); } catch {} $('startSession').textContent = 'Включить распознавание'; return; }
+  wanted = true;
+  $('startSession').textContent = 'Выключить распознавание';
+  setSrState('запускается…', 'warn');
+  spawn();
+};
+
+/* ---------- окно задания ---------- */
+/**
+ * Услышанное за окно — это слова, пришедшие после его открытия. Считаем по
+ * словам, а не по индексам результатов: если Safari копит всю сессию в одном
+ * результате, индекс у фразы задания тот же, что у прошлой.
+ */
+/** Режем по пробелам, а не по нормализованным словам: в отчёт идёт запись движка как есть (`50.000`). */
+const tokens = (text) => text.trim().split(/\s+/).filter(Boolean);
+
+function heardInWindow() {
+  if (!win) return '';
+  const out = [];
+  for (const [sid, text] of sessionText) {
+    if (sid < win.session) continue;
+    const w = tokens(text);
+    out.push(...(sid === win.session ? w.slice(win.skipWords) : w));
+  }
+  return out.join(' ');
+}
+
+function onWindowEvent(t, anyFinal) {
+  const heard = heardInWindow();
+  if (heard !== win.lastHeard) {
+    win.lastHeard = heard;
+    win.lastChangeAt = t;
+    if (win.firstInterimAt == null && heard) win.firstInterimAt = t;
+    const v = verdict(prompts[index], heard);
+    if (win.matchAt == null && v.said !== 'none') win.matchAt = t;
+  }
+  if (anyFinal && win.finalAt == null && heard) win.finalAt = t;
+  $('heard').replaceChildren();
+  const s = document.createElement('span');
+  s.className = anyFinal ? '' : 'interim';
+  s.textContent = heard || '…';
+  $('heard').append(s);
+}
+
+function openWindow() {
+  const text = sessionText.get(sessionId) || '';
+  win = { session: sessionId, skipWords: tokens(text).length, openAt: now(), lastHeard: '' };
+  $('listen').textContent = 'Готово';
+  $('listen').classList.add('listening');
+  $('heard').innerHTML = '<span class="dim">слушаю…</span>';
+  $('verdict').textContent = '';
+  log(`--- окно: ${prompts[index].id} «${prompts[index].text}» (говорит: ${$('speaker').value})`);
+}
+
+function closeWindow() {
+  const p = prompts[index];
+  const heard = heardInWindow();
+  const v = verdict(p, heard);
+  const label = verdictLabel(p, v);
+  const rel = (x) => (x == null ? null : +(x - win.openAt).toFixed(2));
+  const timings = {
+    firstInterim: rel(win.firstInterimAt),
+    match: rel(win.matchAt),
+    final: rel(win.finalAt),
+    lastChange: rel(win.lastChangeAt),
+    playEnd: rel(win.playEndAt),
+  };
+  const prev = results[p.id];
+  results[p.id] = { heard, verdict: v, label, timings, speaker: $('speaker').value, voice: $('voice').value, attempts: (prev?.attempts || 0) + 1 };
+  log(`>>> ${p.id}: «${heard}» → ${label} | ${JSON.stringify(timings)}`, v.said === 'exact' ? 'ok' : 'warn');
+  win = null;
+  $('listen').textContent = 'Слушать ещё раз';
+  $('listen').classList.remove('listening');
+  showVerdict(p);
+  persist();
+  renderSummary();
+}
+
+$('listen').onclick = () => (win ? closeWindow() : openWindow());
+
+/* ---------- образец ---------- */
+const audio = $('audio');
+$('play').onclick = () => {
+  const p = prompts[index];
+  const key = `${$('voice').value}|+0%|${p.text.normalize('NFC')}`;
+  const file = manifest[key];
+  if (!file) { log(`нет образца для ${key}`, 'warn'); return; }
+  audio.src = `./audio/${file}`;
+  audio.onplay = () => { log(`образец играет${win ? ' (окно открыто)' : ''}`, 'dim'); if (win) win.playStartAt = now(); };
+  audio.onended = () => { log('образец закончился', 'dim'); if (win) win.playEndAt = now(); };
+  audio.play().catch((e) => log(`audio.play: ${e.name} ${e.message}`, 'bad'));
+};
+
+/* ---------- навигация ---------- */
+function showVerdict(p) {
+  const r = results[p.id];
+  $('verdict').textContent = r ? `${r.label}${r.attempts > 1 ? ` (попыток: ${r.attempts})` : ''}` : '';
+  $('verdict').className = r ? (r.verdict.said === 'exact' ? 'ok' : r.verdict.empty ? 'bad' : 'warn') : '';
+}
+function show() {
+  const p = prompts[index];
+  $('counter').textContent = `${index + 1} / ${prompts.length} · ${groups[p.group].title}`;
+  $('target').textContent = p.text;
+  $('ru').textContent = p.ru;
+  const r = results[p.id];
+  $('heard').innerHTML = r ? '' : '<span class="dim">—</span>';
+  if (r) $('heard').textContent = r.heard || '(пусто)';
+  $('listen').textContent = r ? 'Слушать ещё раз' : 'Слушать';
+  showVerdict(p);
+  persist();
+}
+function go(delta) {
+  if (win) closeWindow();
+  index = Math.max(0, Math.min(prompts.length - 1, index + delta));
+  show();
+}
+$('prev').onclick = () => go(-1);
+$('next').onclick = () => go(1);
+
+/* ---------- итог ---------- */
+const median = (xs) => {
+  const s = xs.filter((x) => x != null).sort((a, b) => a - b);
+  return s.length ? s[Math.floor(s.length / 2)] : null;
+};
+
+function conclusions() {
+  const done = prompts.filter((p) => results[p.id]);
+  const by = (g) => done.filter((p) => p.group === g).map((p) => ({ p, r: results[p.id] }));
+  const count = (list, pred) => list.filter(pred).length;
+  const all = done.map((p) => results[p.id]);
+  const out = [];
+
+  const t = all.map((r) => r.timings);
+  const finalLag = t.map((x) => (x.final != null && x.lastChange != null ? x.final - x.lastChange : null));
+  const afterPlay = t.map((x) => (x.match != null && x.playEnd != null ? x.match - x.playEnd : null));
+  out.push(['interim / финал',
+    `первый interim от открытия окна — медиана ${median(t.map((x) => x.firstInterim)) ?? '—'} с; ` +
+    `финал после последнего изменения — медиана ${median(finalLag)?.toFixed?.(2) ?? '—'} с` +
+    (afterPlay.some((x) => x != null) ? `; совпадение после конца образца — медиана ${median(afterPlay)?.toFixed?.(2)} с` : '')]);
+
+  out.push(['диакритика', `есть в ${count(all, (r) => r.verdict.diacritics)} из ${count(all, (r) => !r.verdict.empty)} непустых ответов`]);
+
+  const tones = by('tones');
+  if (tones.length) out.push(['шесть тонов ma', `с тоном ${count(tones, (x) => x.r.verdict.said === 'exact')} из ${tones.length}; другой тон ${count(tones, (x) => x.r.verdict.said === 'tone')}; не то слово ${count(tones, (x) => ['none', 'fold'].includes(x.r.verdict.said) && !x.r.verdict.empty)}; пусто ${count(tones, (x) => x.r.verdict.empty)}`]);
+
+  const wrong = by('wrongTone');
+  if (wrong.length) out.push(['неверный тон', `как сказано ${count(wrong, (x) => x.r.verdict.said === 'exact')}; исправил по смыслу ${count(wrong, (x) => x.r.verdict.said !== 'exact' && x.r.verdict.corrected === 'exact')}; иное ${count(wrong, (x) => x.r.verdict.said !== 'exact' && x.r.verdict.corrected !== 'exact')} из ${wrong.length}`]);
+
+  const syl = by('syllable');
+  if (syl.length) out.push(['одиночный слог', `узнан (хотя бы без знаков) ${count(syl, (x) => x.r.verdict.said !== 'none')} из ${syl.length}; с тоном ${count(syl, (x) => x.r.verdict.said === 'exact')}`]);
+
+  const num = by('number');
+  if (num.length) out.push(['числа', `цифрами ${count(num, (x) => x.r.verdict.digits)} из ${num.length}: ${num.map((x) => `«${x.r.heard}»`).join(', ')}`]);
+
+  const ph = by('phrase');
+  if (ph.length) out.push(['фразы', `целиком с тонами ${count(ph, (x) => x.r.verdict.said === 'exact')} из ${ph.length}; без знаков ${count(ph, (x) => x.r.verdict.said !== 'none')}`]);
+
+  return out;
+}
+
+function renderSummary() {
+  const done = prompts.filter((p) => results[p.id]);
+  if (!done.length) { $('summary').textContent = 'пока пусто'; return; }
+  const table = document.createElement('table');
+  for (const [k, v] of conclusions()) {
+    const tr = table.insertRow();
+    tr.insertCell().textContent = k;
+    tr.insertCell().textContent = v;
+  }
+  const p = document.createElement('p');
+  p.className = 'hint';
+  p.textContent = `пройдено ${done.length} из ${prompts.length}`;
+  $('summary').replaceChildren(p, table);
+}
+
+function report() {
+  const md = [];
+  md.push(`### Прогон: ${env.mode}, говорит ${$('speaker').value}`);
+  md.push('', `- UA: \`${env.ua}\``, `- secure=${env.secure}, SR=${env.sr}, phrases=${env.phrases}`, '');
+  md.push('| Вопрос | Итог |', '|---|---|');
+  for (const [k, v] of conclusions()) md.push(`| ${k} | ${v} |`);
+  md.push('', '| Задание | Сказано | Услышано | Вердикт | interim, с | финал, с |', '|---|---|---|---|---|---|');
+  for (const p of prompts) {
+    const r = results[p.id];
+    if (!r) continue;
+    md.push(`| ${p.id} | ${p.text} | ${r.heard || '—'} | ${r.label} | ${r.timings.firstInterim ?? '—'} | ${r.timings.final ?? '—'} |`);
+  }
+  return md.join('\n');
+}
+
+async function copy(text, btn) {
+  const label = btn.textContent;
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.append(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    try { ok = document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+  btn.textContent = ok ? 'Скопировано' : 'Не вышло — выдели журнал вручную';
+  setTimeout(() => (btn.textContent = label), 1800);
+}
+$('copyReport').onclick = (e) => copy(`${report()}\n\n<details><summary>журнал</summary>\n\n\`\`\`\n${lines.join('\n')}\n\`\`\`\n</details>\n`, e.currentTarget);
+$('copyLog').onclick = (e) => copy(lines.join('\n'), e.currentTarget);
+$('reset').onclick = () => {
+  if (!confirm('Стереть результаты этого прогона?')) return;
+  for (const k of Object.keys(results)) delete results[k];
+  index = 0; persist(); show(); renderSummary(); log('результаты стёрты');
+};
+
+show();
+renderSummary();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "viet-speller",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "probe": "vite --config research/vite.config.mjs",
+    "tunnel:probe": "cloudflared tunnel --url http://localhost:5174",
+    "tts:probe": "node scripts/tts.mjs --from research/vi-probe-prompts.json --out research/audio",
+    "test:probe": "node --test research/vi-probe-verdict.test.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "cloudflared": "^0.7.3",
+    "vite": "^8.3.4"
+  }
+}

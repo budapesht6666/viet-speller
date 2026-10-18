@@ -1,0 +1,58 @@
+{
+  "groups": {
+    "phrase": {
+      "title": "Фразы",
+      "question": "Приходит ли фраза из 3–6 слогов целиком и как быстро появляется interim"
+    },
+    "syllable": {
+      "title": "Одиночные слоги",
+      "question": "Распознаётся ли один слог"
+    },
+    "tones": {
+      "title": "Шесть тонов на ma",
+      "question": "Возвращает ли движок диакритику и различает ли тоны одного слога"
+    },
+    "wrongTone": {
+      "title": "Неверный тон",
+      "question": "Пишет ли движок сказанный тон или «исправляет» слово по смыслу"
+    },
+    "number": {
+      "title": "Числа",
+      "question": "Приходят ли числа цифрами"
+    }
+  },
+  "prompts": [
+    { "id": "p-xin-chao", "group": "phrase", "text": "xin chào", "ru": "здравствуйте" },
+    { "id": "p-cam-on-anh", "group": "phrase", "text": "cảm ơn anh", "ru": "спасибо (мужчине чуть старше)" },
+    { "id": "p-bao-nhieu-tien", "group": "phrase", "text": "bao nhiêu tiền", "ru": "сколько стоит" },
+    { "id": "p-khong-hieu", "group": "phrase", "text": "tôi không hiểu", "ru": "я не понимаю" },
+    { "id": "p-khong-cay", "group": "phrase", "text": "không cay", "ru": "не острое" },
+    { "id": "p-dung-o-day", "group": "phrase", "text": "dừng ở đây", "ru": "остановитесь здесь" },
+    { "id": "p-ca-phe", "group": "phrase", "text": "cho tôi một cà phê sữa đá", "ru": "мне один кофе со сгущёнкой и льдом" },
+
+    { "id": "s-ba", "group": "syllable", "text": "ba", "ru": "три" },
+    { "id": "s-nha", "group": "syllable", "text": "nhà", "ru": "дом" },
+    { "id": "s-ga", "group": "syllable", "text": "gà", "ru": "курица" },
+    { "id": "s-tra", "group": "syllable", "text": "trà", "ru": "чай" },
+    { "id": "s-ngu", "group": "syllable", "text": "ngủ", "ru": "спать" },
+    { "id": "s-pho", "group": "syllable", "text": "phở", "ru": "фо (суп)" },
+
+    { "id": "t-ma", "group": "tones", "text": "ma", "ru": "ровный тон (призрак)" },
+    { "id": "t-ma-sac", "group": "tones", "text": "má", "ru": "восходящий (мама на Юге, щека)" },
+    { "id": "t-ma-huyen", "group": "tones", "text": "mà", "ru": "нисходящий (но, а)" },
+    { "id": "t-ma-hoi", "group": "tones", "text": "mả", "ru": "вопросительный (могила)" },
+    { "id": "t-ma-nga", "group": "tones", "text": "mã", "ru": "с надломом (код, лошадь)" },
+    { "id": "t-ma-nang", "group": "tones", "text": "mạ", "ru": "тяжёлый (рисовая рассада)" },
+
+    { "id": "w-bao-nhieu", "group": "wrongTone", "text": "bao nhiều tiền", "corrected": "bao nhiêu tiền", "ru": "«сколько стоит» с нисходящим тоном на nhiêu — такого слова нет" },
+    { "id": "w-xin-chao", "group": "wrongTone", "text": "xin chạo", "corrected": "xin chào", "ru": "«здравствуйте» с тяжёлым тоном на chào — такого слова нет" },
+    { "id": "w-hieu", "group": "wrongTone", "text": "tôi không hiếu", "corrected": "tôi không hiểu", "ru": "«не понимаю» с восходящим тоном: hiếu — другое слово (сыновний долг)" },
+    { "id": "w-sua", "group": "wrongTone", "text": "cà phê sửa đá", "corrected": "cà phê sữa đá", "ru": "«кофе со сгущёнкой» с вопросительным тоном: sửa — «чинить». Так сливает тоны Юг" },
+
+    { "id": "n-10", "group": "number", "text": "mười", "ru": "10" },
+    { "id": "n-25", "group": "number", "text": "hai mươi lăm", "ru": "25" },
+    { "id": "n-123", "group": "number", "text": "một trăm hai mươi ba", "ru": "123" },
+    { "id": "n-50k", "group": "number", "text": "năm mươi nghìn", "ru": "50 000 — так звучит цена" },
+    { "id": "n-3m", "group": "number", "text": "ba triệu", "ru": "3 000 000" }
+  ]
+}
