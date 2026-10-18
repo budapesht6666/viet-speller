@@ -94,8 +94,7 @@ npm run tunnel     # выдаст https://….trycloudflare.com
 ### Замер распознавания (этап 0)
 
 ```powershell
-npm run probe          # проба на http://localhost:5174/vi-probe.html
-npm run tunnel:probe
+npm run probe:phone    # проба и https-туннель, адрес и QR-код для телефона
 ```
 
 Протокол — [research/VI-PROBE-CHECKLIST.md](research/VI-PROBE-CHECKLIST.md).
