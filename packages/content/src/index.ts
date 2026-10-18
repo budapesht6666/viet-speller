@@ -15,12 +15,15 @@ import { cafe, cafeItems } from './city/cafe.js';
 import { grab, grabItems } from './city/grab.js';
 import { market, marketItems } from './city/market.js';
 import { time, timeItems } from './city/time.js';
+import { home, homeItems } from './life/home.js';
+import { bank, bankItems, doctor, doctorItems } from './life/institutions.js';
+import { leisure, leisureItems, smalltalk, smalltalkItems } from './life/leisure.js';
 
 export { achievements } from './achievements.js';
 export { audioFile, audioKey, SPEEDS, VOICE } from './audio.js';
 export type { Speed } from './audio.js';
 
-export const topics: Topic[] = [alphabet, tones, numbers, politeness, family, cafe, market, grab, time, central];
+export const topics: Topic[] = [alphabet, tones, numbers, politeness, family, cafe, market, grab, time, home, doctor, bank, leisure, smalltalk, central];
 
 export const items: Item[] = [
   ...alphabetItems,
@@ -32,6 +35,11 @@ export const items: Item[] = [
   ...marketItems,
   ...grabItems,
   ...timeItems,
+  ...homeItems,
+  ...doctorItems,
+  ...bankItems,
+  ...leisureItems,
+  ...smalltalkItems,
   ...centralItems,
 ];
 
