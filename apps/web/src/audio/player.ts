@@ -75,7 +75,7 @@ export class Player {
   async play(url: string, volume = 1): Promise<void> {
     this.unlock();
     const context = this.context;
-    if (!context) throw new PlayError('no-audio-api');
+    if (!context) return this.playElement(url);
     const buffer = await this.load(url);
 
     this.current?.stop();
@@ -97,6 +97,25 @@ export class Player {
   stop(): void {
     this.current?.stop();
     this.current = null;
+    this.element?.pause();
+  }
+
+  private element: HTMLAudioElement | null = null;
+
+  /**
+   * Запасной путь без Web Audio: обычный <audio>. Громкость здесь не
+   * управляется (на iOS `volume` только читается), но образец звучит —
+   * лучше, чем тишина.
+   */
+  private playElement(url: string): Promise<void> {
+    this.element?.pause();
+    const el = new Audio(url);
+    this.element = el;
+    return new Promise((resolve, reject) => {
+      el.onended = () => resolve();
+      el.onerror = () => reject(new PlayError('network'));
+      el.play().catch(() => reject(new PlayError('no-audio-api')));
+    });
   }
 }
 

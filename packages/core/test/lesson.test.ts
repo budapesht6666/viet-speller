@@ -163,3 +163,17 @@ describe('распознанная речь', () => {
     expect(judgeSpeech(lookup('cam-on-anh'), 'xin chào')).toBeNull();
   });
 });
+
+describe('микрофон пропал посреди урока', () => {
+  it('оставшиеся шаги с микрофоном становятся шагами без него', async () => {
+    const { dropMic } = await import('../src/lesson.js');
+    const steps = buildLesson(phrases, ctx());
+    let s = startLesson('p', steps);
+    s = reduce(s, { type: 'heard', outcome: 'success' }); // первый шаг — «повтори»
+    s = reduce(s, { type: 'next' });
+    const after = dropMic(s, ctx());
+    expect(after.steps.slice(after.index).some(needsMic)).toBe(false);
+    expect(after.steps.slice(0, after.index)).toEqual(s.steps.slice(0, s.index));
+    expect(passAll(after).phase).toBe('done');
+  });
+});

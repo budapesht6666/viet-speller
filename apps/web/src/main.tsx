@@ -3,13 +3,13 @@ import './styles/base.css';
 import './styles/app.css';
 import { render } from 'preact';
 import { App } from './app.js';
+import { boot } from './store/app.js';
 import { hideBoot } from './ui/motion.js';
 
-render(<App />, document.getElementById('app')!);
-
 /**
- * Заставка снимается, когда интерфейс собран и шрифт готов: без этого первый
- * кадр показывает текст системным шрифтом, а потом он прыгает по ширине.
+ * Заставка снимается, когда журнал прочитан, интерфейс собран и шрифт готов:
+ * иначе первый кадр показывает пустой путь, а через мгновение — пройденные
+ * уроки, и текст прыгает по ширине при смене шрифта.
  *
  * Потолок ожидания обязателен. Шрифт может не приехать вовсе (плохая сеть,
  * блокировщик), и тогда заставка без потолка висела бы вечно — хуже любого
@@ -17,11 +17,21 @@ render(<App />, document.getElementById('app')!);
  */
 const CAP = new Promise<void>((resolve) => setTimeout(resolve, 2500));
 
-async function ready(): Promise<void> {
-  await document.fonts?.ready;
-}
+// Интерфейс рисуется в любом случае, даже если хранилище не ответило за
+// потолок: журнал придёт позже через сигналы, а строка «Открываю
+// хранилище…» на главной это покажет. Пустой экран под снятой заставкой
+// хуже.
+let rendered = false;
+const show = () => {
+  if (rendered) return;
+  rendered = true;
+  render(<App />, document.getElementById('app')!);
+};
 
-void Promise.race([ready(), CAP]).then(() => {
-  const boot = document.getElementById('boot');
-  if (boot) hideBoot(boot);
+const booted = boot().catch(() => undefined).then(show);
+
+void Promise.race([booted.then(() => document.fonts?.ready), CAP]).then(() => {
+  show();
+  const el = document.getElementById('boot');
+  if (el) hideBoot(el);
 });

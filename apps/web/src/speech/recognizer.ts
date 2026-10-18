@@ -11,8 +11,10 @@
  * - `confidence` не используем нигде — в `interim` он всегда 0.00;
  * - запускать можно только из жеста пользователя, иначе Safari не отдаст
  *   микрофон;
- * - сессия живёт больше минуты даже в тишине, поэтому авторестарт по `onend` —
- *   страховка, а не основной механизм.
+ * - сессия живёт ~60 с и закрывается сама. **Сессия, начатая не из касания,
+ *   на iPhone глухая** (замер этапа 0): `onstart` приходит мгновенно, звука
+ *   нет, ошибок нет. Поэтому авторестарт по `onend` выключается опцией
+ *   `restart: false` — в уроке слушаем одну сессию на касание.
  *
  * Язык один и не меняется: обучение только вьетнамскому. Менять его на лету
  * было бы и нельзя — после `track.stop()` следующий захват микрофона на
@@ -104,7 +106,10 @@ export class Recognizer {
   private restartTimer: ReturnType<typeof setTimeout> | null = null;
   private state: RecognizerState = 'idle';
 
-  constructor(private readonly events: RecognizerEvents) {}
+  constructor(
+    private readonly events: RecognizerEvents,
+    private readonly options: { restart?: boolean } = {},
+  ) {}
 
   /** Обязан вызываться из обработчика касания: Safari иначе не даст микрофон. */
   start(): void {
@@ -179,7 +184,8 @@ export class Recognizer {
     recognition.onend = () => {
       this.recognition = null;
       this.events.onSessionEnd();
-      if (!this.wanted) {
+      if (!this.wanted || this.options.restart === false) {
+        this.wanted = false;
         this.setState('idle');
         return;
       }

@@ -16,6 +16,7 @@
     "@viet/content": "*",
     "@viet/core": "*",
     "gsap": "^3.15.0",
+    "idb": "^8.0.4",
     "preact": "^11.0.1"
   },
   "devDependencies": {

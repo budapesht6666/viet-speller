@@ -202,6 +202,25 @@ export function buildReview(itemIds: string[], ctx: ReviewContext): Step[] {
   });
 }
 
+/**
+ * Микрофон пропал посреди урока: запретили, кончилась сеть, человек
+ * включил «не могу говорить». Оставшиеся шаги с микрофоном меняются на
+ * шаги без него — урок продолжается, а не начинается заново. «Повтори» →
+ * послушать, «скажи сам» → что значит.
+ */
+export function dropMic(state: LessonState, ctx: LessonContext): LessonState {
+  const random = ctx.random ?? Math.random;
+  const lessonItems = [...new Set(state.steps.map((s) => s.itemId))].map(ctx.lookup);
+  const pool = (target: Item) => [...shuffle(lessonItems, random), ...[...ctx.known].reverse()].filter((i) => i.id !== target.id);
+  const steps = state.steps.map((step, i): Step => {
+    if (i < state.index || !needsMic(step)) return step;
+    if (step.kind === 'repeat') return { ...step, kind: 'intro' };
+    const target = ctx.lookup(step.itemId);
+    return { ...step, kind: 'meaning', options: pickOptions(target, pool(target), 'meaning', false, random) };
+  });
+  return { ...state, steps, attempts: 0 };
+}
+
 /** Как засчитать услышанное. null — пока не похоже, слушаем дальше. */
 export function judgeSpeech(item: Item, transcript: string): { outcome: 'success' | 'almost'; how: HitHow } | null {
   const [hit] = findHits(normalize(transcript), [{ id: item.id, words: accepted(item) }]);

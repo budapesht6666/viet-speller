@@ -58,9 +58,14 @@ research/         пробы на устройствах и их журналы
 - Версии закреплены сознательно: TypeScript 6.0, Prisma 7.10 — причины в
   таблице решений `PLAN.md`. `prisma` при каждом запуске предлагает
   обновиться до `latest` — это 8.0 RC, не обновляем.
-- Вёрстку проверяем Playwright в эмуляции iPhone (`@playwright/test`
-  в корне, Chromium уже скачан). Распознавание так не проверить — только
-  на телефоне.
+- E2E — `npm run e2e` (Playwright, эмуляция iPhone на WebKit,
+  распознавание — заглушка `apps/web/e2e/fake-speech.ts`, которая глуха
+  без касания, как iPhone). Снимки экранов для глаз —
+  `SHOTS=1 npx playwright test shots`, в `test-results/shots`. Снимки — в
+  Chromium: **сборка WebKit для Windows не знает ось веса вариативного
+  шрифта и `AudioContext`** — текст на снимке тонкий, звука нет, а на
+  iPhone всё в порядке. Распознавание так не проверить — только на
+  телефоне.
 - Скиллы проекта — `.claude/skills/`: официальные `prisma-cli` и
   `prisma-client-api` для Prisma 7. Их ставит `prisma init`, остальные из
   того набора (Postgres, Compute, MongoDB, переход на 8) нам не нужны.

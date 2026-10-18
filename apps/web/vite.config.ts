@@ -30,7 +30,18 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // Озвучка — в предзагрузку целиком: без неё разговорник не работает
+        // без сети, а это его единственное обещание (PLAN.md, этап 9).
+        // Иконки Streamline (их почти 400) — по мере показа, а не все сразу.
+        globPatterns: ['**/*.{js,css,html,png,ico,woff2,mp3}', 'icons/*.svg'],
+        globIgnores: ['design-system.html'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/assets/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'streamline', expiration: { maxEntries: 400 } },
+          },
+        ],
         // API и проверка здоровья — это сервер, а не оболочка приложения.
         navigateFallbackDenylist: [/^\/api\//, /^\/health/],
       },
