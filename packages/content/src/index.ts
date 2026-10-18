@@ -7,15 +7,19 @@
 import type { Item, Lesson, Topic } from '@viet/core';
 import { alphabet, alphabetItems } from './basics/alphabet.js';
 import { numberItems, numbers } from './basics/numbers.js';
+import { politeness, politenessItems } from './basics/politeness.js';
 import { toneItems, tones } from './basics/tones.js';
+import { cafe, cafeItems } from './city/cafe.js';
+import { grab, grabItems } from './city/grab.js';
+import { market, marketItems } from './city/market.js';
 
 export { achievements } from './achievements.js';
 export { audioFile, audioKey, SPEEDS, VOICE } from './audio.js';
 export type { Speed } from './audio.js';
 
-export const topics: Topic[] = [alphabet, tones, numbers];
+export const topics: Topic[] = [alphabet, tones, numbers, politeness, cafe, market, grab];
 
-export const items: Item[] = [...alphabetItems, ...toneItems, ...numberItems];
+export const items: Item[] = [...alphabetItems, ...toneItems, ...numberItems, ...politenessItems, ...cafeItems, ...marketItems, ...grabItems];
 
 const byId = new Map(items.map((i) => [i.id, i]));
 

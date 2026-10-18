@@ -22,6 +22,10 @@ export const achievements: Achievement[] = [
   { id: 'topic-alphabet', title: 'Буквы и звуки', description: 'Пройди тему «Алфавит и звуки»', icon: { set: 'objects', name: 'global-learning' }, rule: { kind: 'topic', topicId: 'alphabet' } },
   { id: 'topic-tones', title: 'Слышу тоны', description: 'Пройди тему «Тоны»', icon: { set: 'objects', name: 'ear-speciality' }, rule: { kind: 'topic', topicId: 'tones' } },
   { id: 'topic-numbers', title: 'Знаю цены', description: 'Пройди тему «Цифры и цены»', icon: { set: 'objects', name: 'dollar-coin' }, rule: { kind: 'topic', topicId: 'numbers' } },
+  { id: 'topic-politeness', title: 'Вежливый', description: 'Пройди тему «Вежливость и обращения»', icon: { set: 'ui', name: 'user-feedback-heart' }, rule: { kind: 'topic', topicId: 'politeness' } },
+  { id: 'topic-cafe', title: 'Свой в кафе', description: 'Пройди тему «Кафе и уличная еда»', icon: { set: 'objects', name: 'coffee-mug' }, rule: { kind: 'topic', topicId: 'cafe' } },
+  { id: 'topic-market', title: 'На рынке', description: 'Пройди тему «Рынок»', icon: { set: 'objects', name: 'shopping-basket-1' }, rule: { kind: 'topic', topicId: 'market' } },
+  { id: 'topic-grab', title: 'Сам доеду', description: 'Пройди тему «Grab и такси»', icon: { set: 'objects', name: 'location-pin' }, rule: { kind: 'topic', topicId: 'grab' } },
 
   { id: 'family-day', title: 'Все вместе', description: 'Вся семья позанималась в один день', icon: { set: 'ui', name: 'user-multiple-accounts' }, rule: { kind: 'family-same-day' } },
   { id: 'family-week', title: 'Семейный час', description: 'Семья вместе набрала 60 минут за неделю', icon: { set: 'objects', name: 'gift' }, rule: { kind: 'family-week', minutes: 60 } },
