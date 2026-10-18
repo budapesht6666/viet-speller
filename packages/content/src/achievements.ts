@@ -26,6 +26,9 @@ export const achievements: Achievement[] = [
   { id: 'topic-cafe', title: 'Свой в кафе', description: 'Пройди тему «Кафе и уличная еда»', icon: { set: 'objects', name: 'coffee-mug' }, rule: { kind: 'topic', topicId: 'cafe' } },
   { id: 'topic-market', title: 'На рынке', description: 'Пройди тему «Рынок»', icon: { set: 'objects', name: 'shopping-basket-1' }, rule: { kind: 'topic', topicId: 'market' } },
   { id: 'topic-grab', title: 'Сам доеду', description: 'Пройди тему «Grab и такси»', icon: { set: 'objects', name: 'location-pin' }, rule: { kind: 'topic', topicId: 'grab' } },
+  { id: 'topic-family', title: 'Рассказал о семье', description: 'Пройди тему «Я и семья»', icon: { set: 'ui', name: 'user-sticker-square' }, rule: { kind: 'topic', topicId: 'family' } },
+  { id: 'topic-time', title: 'Не опоздаю', description: 'Пройди тему «Время и дни»', icon: { set: 'ui', name: 'calendar-mark' }, rule: { kind: 'topic', topicId: 'time' } },
+  { id: 'topic-central', title: 'Понимаю соседей', description: 'Пройди тему «Говор Центра»', icon: { set: 'objects', name: 'location-heart-pin' }, rule: { kind: 'topic', topicId: 'central' } },
 
   { id: 'family-day', title: 'Все вместе', description: 'Вся семья позанималась в один день', icon: { set: 'ui', name: 'user-multiple-accounts' }, rule: { kind: 'family-same-day' } },
   { id: 'family-week', title: 'Семейный час', description: 'Семья вместе набрала 60 минут за неделю', icon: { set: 'objects', name: 'gift' }, rule: { kind: 'family-week', minutes: 60 } },

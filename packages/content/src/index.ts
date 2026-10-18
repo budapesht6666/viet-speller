@@ -7,19 +7,33 @@
 import type { Item, Lesson, Topic } from '@viet/core';
 import { alphabet, alphabetItems } from './basics/alphabet.js';
 import { numberItems, numbers } from './basics/numbers.js';
+import { family, familyItems } from './basics/family.js';
 import { politeness, politenessItems } from './basics/politeness.js';
+import { central, centralItems } from './central/dialect.js';
 import { toneItems, tones } from './basics/tones.js';
 import { cafe, cafeItems } from './city/cafe.js';
 import { grab, grabItems } from './city/grab.js';
 import { market, marketItems } from './city/market.js';
+import { time, timeItems } from './city/time.js';
 
 export { achievements } from './achievements.js';
 export { audioFile, audioKey, SPEEDS, VOICE } from './audio.js';
 export type { Speed } from './audio.js';
 
-export const topics: Topic[] = [alphabet, tones, numbers, politeness, cafe, market, grab];
+export const topics: Topic[] = [alphabet, tones, numbers, politeness, family, cafe, market, grab, time, central];
 
-export const items: Item[] = [...alphabetItems, ...toneItems, ...numberItems, ...politenessItems, ...cafeItems, ...marketItems, ...grabItems];
+export const items: Item[] = [
+  ...alphabetItems,
+  ...toneItems,
+  ...numberItems,
+  ...politenessItems,
+  ...familyItems,
+  ...cafeItems,
+  ...marketItems,
+  ...grabItems,
+  ...timeItems,
+  ...centralItems,
+];
 
 const byId = new Map(items.map((i) => [i.id, i]));
 
