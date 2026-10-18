@@ -62,6 +62,9 @@
   #live{font-size:15px;padding:8px 10px;background:#0b0e13;border:1px dashed var(--line);border-radius:8px;margin-top:8px;word-break:break-word;min-height:38px}
   #autoStart{font-size:19px;padding:18px 16px}
   #autoState{font-size:15px;margin-top:6px}
+  #tapOverlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--acc);color:#04101f;font-size:34px;font-weight:800;text-align:center;padding:24px}
+  #tapOverlay[hidden]{display:none}
+  #tapOverlay small{font-size:16px;font-weight:600}
   details summary{cursor:pointer;color:var(--dim);font-size:14px;padding:4px 0}
   pre{white-space:pre-wrap;font-size:12px;background:#0b0e13;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:300px;overflow:auto}
 </style>
@@ -142,6 +145,7 @@
 </div>
 
 <audio id="audio" preload="auto" playsinline></audio>
+<div id="tapOverlay" hidden>Коснись экрана<small>iPhone даёт микрофон новой сессии только по касанию. Замер продолжится с того же задания.</small></div>
 
 <script type="module">
 import { verdict, verdictLabel } from './vi-probe-verdict.mjs';
@@ -246,10 +250,11 @@ function spawn() {
   // Старый экземпляр после abort ещё может прислать onend или onresult —
   // его события чужие и не должны трогать текущую сессию.
   const mine = () => rec === r;
+  const calledAt = now();
   r.onstart = () => {
     if (!mine()) return;
-    sessionId++; sessionStartedAt = now(); sessionText.set(sessionId, '');
-    log(`SR onstart, сессия #${sessionId}`, 'ok');
+    sessionId++; sessionStartedAt = now(); liveSince = now(); sessionText.set(sessionId, '');
+    log(`SR onstart, сессия #${sessionId} (через ${(now() - calledAt).toFixed(2)} с после start)`, 'ok');
     setSrState(`слушает (сессия #${sessionId})`, 'ok');
     if (win && win.session == null) { win.session = sessionId; windowLive(); }
     $('listen').disabled = false;
@@ -264,9 +269,7 @@ function spawn() {
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
       wanted = false;
       setSrState('микрофон запрещён: ' + e.error, 'bad');
-      if (auto) stopAuto(sessionId > 0
-        ? 'Safari не даёт новую сессию без касания. Это тоже результат — пришли журнал.'
-        : 'Нет разрешения на микрофон. Разреши его и начни заново.');
+      if (auto && sessionId === 0) stopAuto('Нет разрешения на микрофон. Разреши его и начни заново.');
     }
     else if (e.error === 'network') setSrState('нет сети у распознавания', 'bad');
     else if (e.error === 'audio-capture') setSrState('микрофон отвалился (audio-capture) — перезапускаю', 'bad');
@@ -275,6 +278,7 @@ function spawn() {
     if (!mine()) return;
     log(`SR onend — сессия #${sessionId} прожила ${(now() - sessionStartedAt).toFixed(1)} с`, 'warn');
     rec = null;
+    liveSince = 0;
     if (!wanted) { setSrState('распознавание выключено'); if (!perPrompt()) $('listen').disabled = true; return; }
     setTimeout(() => { if (wanted && !rec) { log('авторестарт'); spawn(); } }, 150);
   };
@@ -315,6 +319,7 @@ function spawn() {
 
 function stopSession() {
   wanted = false;
+  liveSince = 0;
   const r = rec;
   rec = null;
   if (r) { try { r.abort(); } catch {} }
@@ -370,6 +375,9 @@ function heardInWindow() {
 /** Окно закрывается само: после финала и тишины или по потолку ожидания. */
 const SETTLE_MS = 1500;
 const SILENCE_MS = 12000;
+const NO_FINAL_MS = 4000;
+/** Потолок окна, что бы ни происходило. */
+const WINDOW_MAX_MS = 20000;
 
 function onWindowEvent(t, anyFinal) {
   const heard = heardInWindow();
@@ -382,10 +390,14 @@ function onWindowEvent(t, anyFinal) {
   }
   if (anyFinal && win.finalAt == null && heard) win.finalAt = t;
   if (heard) {
-    // Таймер перезаводится на каждом событии: закрываемся, только когда после
-    // финала полторы секунды ничего не меняется.
+    // Таймер перезаводится на каждом событии: закрываемся, когда после финала
+    // полторы секунды ничего не меняется. Без финала ждём дольше, но тоже
+    // закрываемся: сессия может умереть посреди фразы, и финала не будет.
     clearTimeout(win.settle);
-    if (win.finalAt != null) win.settle = setTimeout(() => win && closeWindow('финал и тишина'), SETTLE_MS);
+    const w = win;
+    win.settle = w.finalAt != null
+      ? setTimeout(() => win === w && closeWindow('финал и тишина'), SETTLE_MS)
+      : setTimeout(() => win === w && closeWindow('без финала'), NO_FINAL_MS);
   }
   $('heard').replaceChildren();
   const s = document.createElement('span');
@@ -417,6 +429,7 @@ async function commandSpeaker(p, w) {
 function windowLive() {
   const w = win;
   w.silence = setTimeout(() => win === w && !w.lastHeard && closeWindow('тишина'), SILENCE_MS);
+  w.cap = setTimeout(() => win === w && closeWindow('потолок 20 с'), WINDOW_MAX_MS);
   if ($('speaker').value === 'sample-remote') commandSpeaker(prompts[index], w);
 }
 
@@ -444,6 +457,7 @@ function closeWindow(why = 'вручную') {
   if (!win) return;
   clearTimeout(win.settle);
   clearTimeout(win.silence);
+  clearTimeout(win.cap);
   const p = prompts[index];
   const heard = heardInWindow();
   const v = verdict(p, heard);
@@ -491,17 +505,36 @@ $('play').onclick = () => {
 
 /* ---------- автозамер ---------- */
 /**
- * Одно касание — и все задания подряд: новая сессия, ноутбук играет образец,
- * окно закрывается само, следующее задание. Касание нужно ровно одно: без
- * жеста Safari не даст микрофон. Отчёт уходит на ноутбук сам.
+ * Все задания подряд, касаний — минимум.
+ *
+ * Прогон автозамера 18.10: сессия, начатая касанием, слышит; все 27 сессий,
+ * начатых без касания, «стартовали» за 0.01 с и не услышали ничего. Поэтому:
+ *
+ * 1. Одна сессия от касания, в ней задания идут подряд, пока iPhone её не
+ *    закроет сам (~60 с).
+ * 2. Задание вернулось пустым — новая сессия без касания, но после паузы:
+ *    так проверяется, не в паузе ли дело.
+ * 3. Снова пусто — экран «Коснись», ноутбук пищит; касание начинает сессию,
+ *    и то же задание идёт заново.
+ *
+ * Сколько понадобилось касаний и помогала ли пауза — в отчёте.
  */
 let auto = false;
 let windowDone = null;
+let liveSince = 0;
+const autoStats = { taps: 0, pauseRestarts: 0, pauseRestartsHelped: 0 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function waitLive(ms = 8000) {
+  const until = now() + ms / 1000;
+  while (auto && !(rec && liveSince) && now() < until) await sleep(50);
+  return Boolean(rec && liveSince);
+}
 
 function stopAuto(reason) {
   if (!auto) return;
   auto = false;
+  hideTap();
   $('autoState').textContent = reason;
   $('autoState').className = 'bad';
   log(`автозамер остановлен: ${reason}`, 'bad');
@@ -509,26 +542,84 @@ function stopAuto(reason) {
   $('autoStart').textContent = 'Начать автозамер';
 }
 
+/** Сессия, начатая из обработчика касания. Только так iPhone даёт живой микрофон. */
+function startByGesture() {
+  stopSession();
+  wanted = true;
+  spawn();
+}
+
+let tapResolve = null;
+function askTap() {
+  autoStats.taps++;
+  log('нужно касание: сессия без касания глухая', 'warn');
+  $('tapOverlay').hidden = false;
+  fetch('./probe-beep', { method: 'POST' }).catch(() => {});
+  return new Promise((r) => (tapResolve = r));
+}
+function hideTap() {
+  $('tapOverlay').hidden = true;
+  tapResolve = null;
+}
+$('tapOverlay').onclick = () => {
+  const done = tapResolve;
+  hideTap();
+  log('касание — новая сессия', 'ok');
+  startByGesture();
+  done?.();
+};
+
+async function runPrompt() {
+  const done = new Promise((r) => (windowDone = r));
+  openWindow();
+  await done;
+  return !results[prompts[index].id].verdict.empty;
+}
+
 async function runAuto() {
   auto = true;
   $('autoStart').textContent = 'Остановить';
   $('speaker').value = 'sample-remote';
-  $('sessionMode').value = 'per-prompt';
+  $('sessionMode').value = 'single';
   applySessionMode();
   for (const k of Object.keys(results)) delete results[k];
+  Object.assign(autoStats, { taps: 1, pauseRestarts: 0, pauseRestartsHelped: 0 });
   log('=== автозамер ===');
   const started = now();
+  startByGesture(); // первое касание — кнопка «Начать автозамер»
+
   for (index = 0; index < prompts.length && auto; index++) {
     show();
     $('autoState').textContent = `${index + 1} из ${prompts.length}: ${prompts[index].text}`;
     $('autoState').className = 'warn';
-    const done = new Promise((r) => (windowDone = r));
-    openWindow();
-    await done;
-    await sleep(800);
+    if (!(await waitLive())) {
+      if (!auto) break;
+      await askTap();
+      if (!(await waitLive())) { stopAuto('Сессия не запускается даже после касания — пришли журнал.'); break; }
+    }
+    if (await runPrompt()) { await sleep(600); continue; }
+    if (!auto) break;
+
+    // Пусто. Сначала — новая сессия без касания, но после паузы.
+    autoStats.pauseRestarts++;
+    log('пусто — новая сессия без касания после паузы 2.5 с', 'warn');
+    stopSession();
+    await sleep(2500);
+    wanted = true;
+    spawn();
+    if ((await waitLive()) && (await runPrompt())) { autoStats.pauseRestartsHelped++; await sleep(600); continue; }
+    if (!auto) break;
+
+    // Пауза не помогла — касание.
+    await askTap();
+    if (await waitLive()) await runPrompt();
+    await sleep(600);
   }
+
   if (index >= prompts.length) index = prompts.length - 1;
   show();
+  log(`касаний: ${autoStats.taps}; перезапусков без касания с паузой: ${autoStats.pauseRestarts}, помогло: ${autoStats.pauseRestartsHelped}`);
+  stopSession();
   if (!auto) { await saveReport(); return; }
   auto = false;
   $('autoStart').textContent = 'Начать автозамер';
@@ -630,6 +721,7 @@ function report() {
   const md = [];
   md.push(`### Прогон: ${env.mode}, говорит ${$('speaker').value}, сессия ${$('sessionMode').value}`);
   md.push('', `- UA: \`${env.ua}\``, `- secure=${env.secure}, SR=${env.sr}, phrases=${env.phrases}`, '');
+  md.push(`- автозамер: касаний ${autoStats.taps}, перезапусков без касания с паузой ${autoStats.pauseRestarts}, помогло ${autoStats.pauseRestartsHelped}`, '');
   md.push('| Вопрос | Итог |', '|---|---|');
   for (const [k, v] of conclusions()) md.push(`| ${k} | ${v} |`);
   md.push('', '| Задание | Сказано | Услышано | Вердикт | interim, с | финал, с |', '|---|---|---|---|---|---|');

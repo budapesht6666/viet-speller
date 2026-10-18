@@ -73,6 +73,15 @@ function probeServer() {
         send(res, 200, result);
       });
 
+      // Телефону нужно касание: пискнуть колонками, чтобы человек подошёл.
+      server.middlewares.use('/probe-beep', (req, res) => {
+        say('>>> КОСНИСЬ ЭКРАНА ТЕЛЕФОНА <<<');
+        if (!process.env.PROBE_SILENT) {
+          spawn('ffplay', ['-nodisp', '-autoexit', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=880:duration=0.25'], { stdio: 'ignore' }).on('error', () => {});
+        }
+        send(res, 200, { ok: true });
+      });
+
       server.middlewares.use('/probe-report', async (req, res) => {
         if (req.method !== 'POST') return send(res, 405, { ok: false });
         const report = await readBody(req);
