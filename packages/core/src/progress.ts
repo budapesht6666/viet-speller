@@ -12,7 +12,7 @@
  */
 
 import { createEmptyCard, fsrs, type Card } from 'ts-fsrs';
-import type { Lesson } from './content.js';
+import type { Lesson, Topic } from './content.js';
 import type { Grade } from './lesson.js';
 
 /** Семья живёт во Вьетнаме: «сегодня» одно и то же на телефоне и на сервере. */
@@ -150,6 +150,40 @@ export function unlockedLessons(path: Lesson[], p: Progress): Set<string> {
     if (i === 0 || p.doneLessons.has(l.id) || p.doneLessons.has(path[i - 1]!.id)) open.add(l.id);
   });
   return open;
+}
+
+/**
+ * Уровень темы (PLAN.md, этап 5): 0 — не пройдена, 1 «Узнаю» — все уроки
+ * пройдены, 2 «Повторяю» — каждый элемент повторён хотя бы раз после урока,
+ * 3 «Говорю сам» — всё держится в памяти не меньше месяца, 4 «Свободно» —
+ * не меньше четырёх месяцев.
+ *
+ * Пороги — по росту стабильности FSRS-6 при ответах вовремя: 2 → 11 → 46 →
+ * 163 дня. Месяц — это около четырёх удачных повторений за две недели;
+ * неделя давалась бы на второй день и ничего бы не значила.
+ *
+ * Мерило — память по FSRS (стабильность карточки), а не способ ответа:
+ * журнал не отличает сказанное голосом от выбранного касанием, и уровень
+ * не обещает больше, чем проверяет.
+ */
+export const TOPIC_LEVELS = ['Не пройдена', 'Узнаю', 'Повторяю', 'Говорю сам', 'Свободно'] as const;
+export type TopicLevel = 0 | 1 | 2 | 3 | 4;
+
+/** Стабильность карточки в днях для «Говорю сам» и «Свободно». */
+const SPEAK_DAYS = 30;
+const FLUENT_DAYS = 120;
+
+export function topicLevel(topic: Topic, p: Progress): TopicLevel {
+  if (!topic.lessons.every((l) => p.doneLessons.has(l.id))) return 0;
+  const cards = topic.lessons.flatMap((l) => l.items).map((id) => p.cards.get(id));
+  if (cards.some((c) => !c)) return 1;
+  const all = cards as Card[];
+  // Первая оценка карточки — в самом уроке; «повторено» — значит, была ещё одна.
+  if (all.some((c) => c.reps < 2)) return 1;
+  const weakest = Math.min(...all.map((c) => c.stability));
+  if (weakest >= FLUENT_DAYS) return 4;
+  if (weakest >= SPEAK_DAYS) return 3;
+  return 2;
 }
 
 /** Следующий урок по пути: первый открытый и не пройденный. */

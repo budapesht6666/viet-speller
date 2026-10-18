@@ -1,4 +1,4 @@
-import { dayKey, dueItems, minutesOn, minutesThisWeek, nextLesson, streak, unlockedLessons } from '@viet/core';
+import { dayKey, dueItems, minutesOn, minutesThisWeek, nextLesson, streak, topicLevel, TOPIC_LEVELS, unlockedLessons } from '@viet/core';
 import { achievements, topics } from '@viet/content';
 import { lessons } from '@viet/content';
 import { useEffect, useState } from 'preact/hooks';
@@ -84,6 +84,20 @@ const SPEECH: Record<ReturnType<typeof recognitionBlocker>, { state: StatusState
   insecure: { state: 'off', text: t('speech.insecure') },
   unsupported: { state: 'off', text: t('speech.unsupported') },
 };
+
+/** Четыре ступени уровня темы. Что значит каждая — в подсказке. */
+function Level({ level }: { level: number }) {
+  return (
+    <span class="level" title={t(`level.${level}` as 'level.0')}>
+      <span class="level__steps" aria-hidden="true">
+        {[1, 2, 3, 4].map((n) => (
+          <span key={n} class="level__step" data-on={n <= level} />
+        ))}
+      </span>
+      <span class="caption">{TOPIC_LEVELS[level]}</span>
+    </span>
+  );
+}
 
 /** Касание «начать» разблокирует звук: дальше образцы играют сами. */
 function start(lessonId: string) {
@@ -185,7 +199,10 @@ export function Home() {
       <section class="path" aria-label={t('home.path')}>
         {topics.map((topic) => (
           <div key={topic.id} class="path__topic">
-            <p class="eyebrow">{topic.title}</p>
+            <div class="path__head">
+              <p class="eyebrow">{topic.title}</p>
+              <Level level={topicLevel(topic, p)} />
+            </div>
             <p class="caption">{topic.summary}</p>
             <ol class="path__lessons">
               {topic.lessons.map((l) => {

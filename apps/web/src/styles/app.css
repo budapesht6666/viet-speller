@@ -442,3 +442,14 @@
 .show__actions .btn {
   flex: 1;
 }
+
+.path__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.path__head .eyebrow {
+  margin: 0;
+}

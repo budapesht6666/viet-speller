@@ -366,6 +366,30 @@ svg {
   filter: grayscale(1);
 }
 
+/* ── Уровень темы ──────────────────────────────────────────────────────── */
+
+.level {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.level__steps {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.level__step {
+  width: var(--space-3);
+  height: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--c-surface-sunken);
+}
+
+.level__step[data-on='true'] {
+  background: var(--c-accent);
+}
+
 /* ── Иконка ────────────────────────────────────────────────────────────── */
 
 .icon {

@@ -95,3 +95,22 @@ describe('минуты за неделю', () => {
     expect(minutesThisWeek(p, new Date('2026-10-15T03:00:00Z'))).toBe(7);
   });
 });
+
+describe('уровень темы', () => {
+  const topic = { id: 't', title: 'T', summary: '', lessons: [path[0]!, path[1]!] };
+
+  it('0 — пока пройдены не все уроки, 1 — когда все', async () => {
+    const { topicLevel } = await import('../src/progress.js');
+    expect(topicLevel(topic, replay([done('2026-10-01T03:00:00Z', 'l1', { a: 3 })]))).toBe(0);
+    expect(topicLevel(topic, replay([done('2026-10-01T03:00:00Z', 'l1', { a: 3 }), done('2026-10-01T04:00:00Z', 'l2', { b: 3 })]))).toBe(1);
+  });
+
+  it('2 — каждое слово повторено после урока; дальше — по тому, сколько держится в памяти', async () => {
+    const { topicLevel } = await import('../src/progress.js');
+    const base = [done('2026-09-01T03:00:00Z', 'l1', { a: 3 }), done('2026-09-01T04:00:00Z', 'l2', { b: 3 })];
+    expect(topicLevel(topic, replay([...base, reviewed('2026-09-02T03:00:00Z', 'a', 3), reviewed('2026-09-02T03:00:00Z', 'b', 3)]))).toBe(2);
+    // Много удачных повторений с растущими промежутками — память окрепла.
+    const later = ['2026-09-05', '2026-09-15', '2026-10-10', '2026-12-20'].flatMap((d) => [reviewed(`${d}T03:00:00Z`, 'a', 3), reviewed(`${d}T03:00:00Z`, 'b', 3)]);
+    expect(topicLevel(topic, replay([...base, ...later]))).toBeGreaterThanOrEqual(3);
+  });
+});
