@@ -18,12 +18,13 @@ import { time, timeItems } from './city/time.js';
 import { home, homeItems } from './life/home.js';
 import { bank, bankItems, doctor, doctorItems } from './life/institutions.js';
 import { leisure, leisureItems, smalltalk, smalltalkItems } from './life/leisure.js';
+import { barber, barberItems, delivery, deliveryItems, laundry, laundryItems } from './life/services.js';
 
 export { achievements } from './achievements.js';
 export { audioFile, audioKey, SPEEDS, VOICE } from './audio.js';
 export type { Speed } from './audio.js';
 
-export const topics: Topic[] = [alphabet, tones, numbers, politeness, family, cafe, market, grab, time, home, doctor, bank, leisure, smalltalk, central];
+export const topics: Topic[] = [alphabet, tones, numbers, politeness, family, cafe, market, grab, time, home, doctor, bank, delivery, laundry, barber, leisure, smalltalk, central];
 
 export const items: Item[] = [
   ...alphabetItems,
@@ -38,6 +39,9 @@ export const items: Item[] = [
   ...homeItems,
   ...doctorItems,
   ...bankItems,
+  ...deliveryItems,
+  ...laundryItems,
+  ...barberItems,
   ...leisureItems,
   ...smalltalkItems,
   ...centralItems,
