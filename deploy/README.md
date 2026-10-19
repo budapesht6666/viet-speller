@@ -6,11 +6,13 @@
 
 ## Первый раз
 
+Сделано 19.10.2026. Репозиторий публичный, поэтому клон по https, deploy-ключ не нужен.
+
 На сервере, от root:
 
 ```bash
 vps add viet-speller --type web \
-    --repo git@github.com:budapesht6666/viet-speller.git \
+    --repo https://github.com/budapesht6666/viet-speller.git \
     --domain viet-speller.p1gog.duckdns.org --port 3000
 
 cp /srv/apps/viet-speller/repo/deploy/compose.yml /srv/apps/viet-speller/compose.yml
