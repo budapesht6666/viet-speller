@@ -356,11 +356,6 @@
   padding-bottom: var(--space-6);
 }
 
-.home__update {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
 
 /* ── Урок ──────────────────────────────────────────────────────────────── */
 

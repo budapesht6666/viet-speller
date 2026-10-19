@@ -238,6 +238,12 @@ Streamline free (`webalys-hq/streamline-vectors`), стиль `plump/gradient`,
 Cloudflare quick tunnel, поэтому в `vite.config.ts` `host: true` и
 `allowedHosts: true`.
 
+**`npm run phone` — не прод.** У туннеля своя база (`apps/api/data/dev.db`
+на машине разработки) и свой адрес, у которого своё хранилище браузера.
+Аккаунт и прогресс оттуда на https://viet-speller.p1gog.duckdns.org не
+попадают: 19.10.2026 владелец зарегистрировался через туннель и не смог
+войти на проде. Для семьи — только прод.
+
 ## Секреты
 
 Ключи (`ELEVENLABS_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `JWT_SECRET`) только в

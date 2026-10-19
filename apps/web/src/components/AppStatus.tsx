@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { recognitionBlocker } from '../speech/recognizer.js';
 import { storage } from '../store/app.js';
-import { applyUpdate, pwa } from '../store/pwa.js';
+import { pwa } from '../store/pwa.js';
 import { account, syncState } from '../store/sync.js';
 import { t } from '../strings.js';
 import { Status, type StatusState } from './ui.js';
@@ -28,31 +28,10 @@ export function useOnline(): boolean {
   return online;
 }
 
-/**
- * Service worker. Обновление не ставится само посреди урока: перезагрузка
- * на полуслове хуже, чем старая версия ещё пять минут. Поэтому кнопка.
- */
-function AppUpdate() {
-  const [updating, setUpdating] = useState(false);
+/** Офлайн-версия. Обновления ставятся сами (store/pwa.ts), кнопки нет. */
+function OfflineStatus() {
   const state = pwa.value;
-  if (state === 'update') {
-    return (
-      <div class="card home__update">
-        <Status state="wait">{t('app.updateReady')}</Status>
-        <button
-          class="btn btn--quiet"
-          type="button"
-          disabled={updating}
-          onClick={() => {
-            setUpdating(true);
-            applyUpdate();
-          }}
-        >
-          {updating ? t('app.updating') : t('app.update')}
-        </button>
-      </div>
-    );
-  }
+  if (state === 'off') return null;
   if (state === 'error') return <Status state="off">{t('app.swError')}</Status>;
   if (state === 'ready') return <Status state="ok">{t('app.offlineReady')}</Status>;
   return <Status state="wait">{t('app.swPending')}</Status>;
@@ -87,7 +66,7 @@ export function AppStatus() {
       <Status state={online ? 'ok' : 'off'}>{online ? t('net.online') : t('net.offline')}</Status>
       <Status state={storage.value === 'idb' ? 'ok' : storage.value === 'memory' ? 'off' : 'wait'}>{t(`storage.${storage.value}`)}</Status>
       <SyncStatus />
-      <AppUpdate />
+      <OfflineStatus />
     </section>
   );
 }
@@ -103,7 +82,6 @@ export function LessonBlockers() {
     speech.state !== 'ok' && <Status key="speech" state="off">{speech.text}</Status>,
     !online && <Status key="net" state="off">{t('net.offline')}</Status>,
     storage.value === 'memory' && <Status key="storage" state="off">{t('storage.memory')}</Status>,
-    pwa.value === 'update' && <AppUpdate key="update" />,
   ].filter(Boolean);
   if (!problems.length) return null;
   return <section class="home__status">{problems}</section>;

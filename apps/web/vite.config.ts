@@ -9,8 +9,13 @@ export default defineConfig({
   plugins: [
     preact(),
     VitePWA({
-      // Обновление не ставится само посреди урока — показываем кнопку.
-      registerType: 'prompt',
+      // Обновление ставится само: новый service worker сразу берёт
+      // управление (skipWaiting + clientsClaim). Перезагружает страницу не
+      // плагин, а store/pwa.ts — только когда приложение свёрнуто, чтобы не
+      // перезагрузить посреди урока. Кнопка «Обновить» была хрупкой: на
+      // странице без контроллера она висела и ничего не делала.
+      registerType: 'autoUpdate',
+      injectRegister: false,
       includeAssets: ['favicon.ico', 'icons/*.svg', 'icons/*.png'],
       manifest: {
         name: 'Viet Speller',
@@ -30,6 +35,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Явно: с injectRegister: false режим autoUpdate их сам не ставит.
+        skipWaiting: true,
+        clientsClaim: true,
         // Озвучка — в предзагрузку целиком: без неё разговорник не работает
         // без сети, а это его единственное обещание (PLAN.md, этап 9).
         // Иконки Streamline (их почти 400) — по мере показа, а не все сразу.
