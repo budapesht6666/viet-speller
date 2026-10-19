@@ -13,11 +13,12 @@ async function register(page: Page, login: string, name: string, invite = '') {
   if (invite) await page.getByLabel('Код семьи').fill(invite);
   await page.locator('form').getByRole('button', { name: 'Регистрация' }).click();
   await expect(page.locator('.family__code')).toHaveText(/^[A-Z2-9]{6}$/);
-  // Вход виден на вкладке: имя вместо «Войти».
+  // Вход виден в шапке: буква имени вместо значка входа, имя — в aria-label.
   await page.getByRole('button', { name: 'Учёба' }).click();
-  await expect(page.locator('.profile-btn:not(.settings-btn)')).toContainText(name);
-  await expect(page.locator('.profile-btn:not(.settings-btn)')).not.toContainText('Войти');
-  await page.locator('.profile-btn:not(.settings-btn)').click();
+  const profile = page.locator('.profile-btn:not(.settings-btn)');
+  await expect(profile).toHaveAttribute('aria-label', name);
+  await expect(profile.locator('.avatar')).toHaveText(name[0]!.toUpperCase());
+  await profile.click();
 }
 
 /** Проходит первый урок верными ответами. */
@@ -126,4 +127,29 @@ test('журнал распознавания: попытки гостя ухо�
   await register(page, `speech-${stamp}`, 'Голос');
   await expect(page.locator('.speech__name')).toContainText('iPhone');
   await expect(page.locator('.speech__name')).toContainText(`попыток: ${said}`);
+});
+
+test('фото профиля: выбирается в настройках, видно в шапке и в рейтинге, убирается', async ({ page }) => {
+  await register(page, `photo-${stamp}`, 'Фото');
+  await page.getByRole('button', { name: 'Учёба' }).click();
+  await page.getByRole('button', { name: 'Настройки' }).click();
+
+  // Снимок любого размера: телефон сам режет его до квадрата 256×256.
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await page.locator('.settings__file').setInputFiles({ name: 'me.png', mimeType: 'image/png', buffer: png });
+  const photo = page.locator('.settings__photo img.avatar');
+  await expect(photo).toHaveAttribute('src', /^\/api\/users\/.+\/avatar\?v=\d+$/);
+  await expect(photo).toHaveJSProperty('naturalWidth', 256);
+  await expect(page.getByRole('button', { name: 'Убрать' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Учёба' }).click();
+  await expect(page.locator('.profile-btn:not(.settings-btn) img.avatar')).toHaveJSProperty('naturalWidth', 256);
+  await page.locator('.profile-btn:not(.settings-btn)').click();
+  await expect(page.locator('.board__row[data-me="true"] img.avatar')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Учёба' }).click();
+  await page.getByRole('button', { name: 'Настройки' }).click();
+  await page.getByRole('button', { name: 'Убрать' }).click();
+  await expect(page.locator('.settings__photo .avatar')).toHaveText('Ф');
+  await expect(page.getByText('Выбрать фото')).toBeVisible();
 });

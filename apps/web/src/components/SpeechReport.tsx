@@ -65,7 +65,6 @@ export function SpeechReport() {
   return (
     <section class="card speech">
       <p class="eyebrow">{t('speech.title')}</p>
-      <p class="caption">{t('speech.lead')}</p>
       {error && <Status state="off">{error}</Status>}
       {!engines && !error && <Status state="wait">{t('family.loading')}</Status>}
       {engines?.length === 0 && <p>{t('speech.empty')}</p>}

@@ -12,32 +12,52 @@
 
 .home__title {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
 }
 
-.profile-btn {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
-  min-width: var(--tap-min);
-  max-width: 96px;
-}
-
-.profile-btn .caption {
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
+/* Значки шапки — одного размера и на одной линии с названием: подписей
+   нет, имя профиля — в aria-label. */
 .home__actions {
   display: flex;
   flex: none;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.profile-btn {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+}
+
+/* Значок обновления: место занято всегда, виден — только пока идёт
+   установка (store/pwa.ts). */
+.update-indicator {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.update-indicator[data-on='true'] {
+  opacity: 1;
+}
+
+.update-indicator[data-on='true'] .icon {
+  animation: update-spin var(--duration-spin) linear infinite;
+}
+
+@keyframes update-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Журнал распознавания ──────────────────────────────────────────────── */
@@ -79,6 +99,34 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.settings__photo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.settings__pick,
+.settings__remove,
+.settings__login {
+  width: auto;
+  cursor: pointer;
+}
+
+.settings__pick[data-busy='true'] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Поле файла прячется, но остаётся в разметке: касание подписи открывает
+   выбор фото, а с display: none на iOS это не работает. */
+.settings__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 
 .settings__choices {
@@ -137,12 +185,6 @@
 .home__today {
   margin: calc(-1 * var(--space-3)) 0 0;
   text-align: center;
-}
-
-.path__listen {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  background: var(--c-surface);
 }
 
 /* ── Вкладки ───────────────────────────────────────────────────────────── */
@@ -217,10 +259,20 @@
   line-height: 1;
 }
 
+.avatar--head {
+  width: var(--avatar-head);
+  height: var(--avatar-head);
+}
+
 .avatar--large {
   width: var(--avatar-large);
   height: var(--avatar-large);
   font-size: var(--text-h2);
+}
+
+/* Фото вместо буквы — тот же кружок. */
+img.avatar {
+  object-fit: cover;
 }
 
 .profile {
@@ -277,10 +329,10 @@
 
 .board__row {
   display: grid;
-  grid-template-columns: var(--space-8) 1fr auto;
+  grid-template-columns: var(--space-8) auto 1fr auto;
   grid-template-areas:
-    'place name minutes'
-    'place meta minutes';
+    'place avatar name minutes'
+    'place avatar meta minutes';
   align-items: center;
   column-gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
@@ -290,6 +342,11 @@
 
 .board__row[data-me='true'] {
   box-shadow: inset 0 0 0 2px var(--c-accent);
+}
+
+.board__avatar {
+  display: grid;
+  grid-area: avatar;
 }
 
 .board__place {

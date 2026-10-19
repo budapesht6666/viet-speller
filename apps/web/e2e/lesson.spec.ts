@@ -188,16 +188,16 @@ test('настройки: голос выбирается на слух, зап�
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Настройки' }).click();
-  await expect(page.getByRole('radio', { name: 'Женский голос' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: 'Женский' })).toHaveAttribute('aria-checked', 'true');
 
   // Касание варианта сразу его озвучивает — образцом этого голоса.
-  await page.getByRole('radio', { name: 'Мужской голос' }).click();
-  await expect(page.getByRole('radio', { name: 'Мужской голос' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('radio', { name: 'Мужской' }).click();
+  await expect(page.getByRole('radio', { name: 'Мужской' })).toHaveAttribute('aria-checked', 'true');
   await expect.poll(played).toEqual([expect.stringContaining(file('xin chào'))]);
 
   await page.reload();
   await page.getByRole('button', { name: 'Настройки' }).click();
-  await expect(page.getByRole('radio', { name: 'Мужской голос' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: 'Мужской' })).toHaveAttribute('aria-checked', 'true');
 
   // В уроке — тот же голос: первый образец первого урока.
   await page.getByRole('button', { name: 'Учёба' }).click();

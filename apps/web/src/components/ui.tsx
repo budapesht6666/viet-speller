@@ -14,10 +14,18 @@ export function Icon({ name, size = 24, set = 'ui' }: { name: string; size?: num
   return <img class="icon" src={`/assets/${set}/${name}.svg`} width={size} height={size} alt="" aria-hidden="true" />;
 }
 
-/** Кружок с первой буквой имени — примета того, что человек вошёл. */
-export function Avatar({ name, large }: { name: string; large?: boolean }) {
+const AVATAR_PX = { small: 28, head: 32, large: 48 } as const;
+
+/**
+ * Фото профиля, а без него — кружок с первой буквой имени. Примета того,
+ * что человек вошёл. Размеры совпадают с --avatar* в tokens.css: у картинки
+ * в разметке width и height, чтобы место было занято до загрузки.
+ */
+export function Avatar({ name, src, size = 'small' }: { name: string; src?: string | null; size?: keyof typeof AVATAR_PX }) {
+  const cls = `avatar avatar--${size}`;
+  if (src) return <img class={cls} src={src} width={AVATAR_PX[size]} height={AVATAR_PX[size]} alt="" aria-hidden="true" />;
   return (
-    <span class={large ? 'avatar avatar--large' : 'avatar'} aria-hidden="true">
+    <span class={cls} aria-hidden="true">
       {[...name.trim()][0]?.toUpperCase() ?? '?'}
     </span>
   );

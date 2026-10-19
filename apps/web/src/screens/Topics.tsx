@@ -5,7 +5,6 @@
  */
 
 import { topicLevel } from '@viet/core';
-import { topics } from '@viet/content';
 import { Level } from '../components/Level.js';
 import { go, progress } from '../store/app.js';
 import { chooseTopic, openTopics, shownTopic } from '../store/path.js';
@@ -15,7 +14,6 @@ export function Topics() {
   const p = progress.value;
   const open = openTopics(p);
   const shown = shownTopic(p);
-  const ahead = topics.length - open.length;
   return (
     <main class="screen screen--tabbed home">
       <header class="home__hero">
@@ -48,11 +46,6 @@ export function Topics() {
           );
         })}
       </ul>
-      {ahead > 0 && (
-        <p class="caption">
-          {t('topics.ahead')}: {ahead}
-        </p>
-      )}
     </main>
   );
 }

@@ -34,6 +34,7 @@ model User {
   createdAt    DateTime @default(now())
   events       Event[]
   speech       SpeechAttempt[]
+  avatar       Avatar?
 }
 
 model Event {
@@ -71,4 +72,16 @@ model SpeechAttempt {
   /// apple | google | other — движки отвечают по-разному.
   engine     String
   receivedAt DateTime @default(now())
+}
+
+/// Фото профиля. Отдельной таблицей: картинка весит килобайты, а строку
+/// пользователя читает каждый запрос. Телефон присылает уже уменьшенную.
+model Avatar {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id])
+  image     Bytes
+  /// MIME-тип картинки: image/jpeg, image/png или image/webp.
+  type      String
+  /// Входит в адрес картинки: новое фото — новый адрес, старое не залипает в кеше.
+  updatedAt DateTime @updatedAt
 }

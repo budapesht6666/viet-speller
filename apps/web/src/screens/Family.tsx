@@ -16,6 +16,7 @@ import { t } from '../strings.js';
 interface Standing {
   userId: string;
   name: string;
+  avatarUrl: string | null;
   weekMinutes: number;
   todayMinutes: number;
   streak: number;
@@ -52,7 +53,6 @@ function SignIn() {
 
   return (
     <form class="form" onSubmit={submit}>
-      <p class="lead">{t('family.why')}</p>
       <div class="seg" role="radiogroup">
         <button type="button" class="chip" role="radio" aria-checked={mode === 'register'} onClick={() => setMode('register')}>
           {t('family.register')}
@@ -78,7 +78,6 @@ function SignIn() {
           <label class="field">
             <span class="caption">{t('family.invite')}</span>
             <input class="input input--code" autocapitalize="characters" maxLength={6} {...field('inviteCode')} />
-            <span class="caption">{t('family.inviteHint')}</span>
           </label>
         </>
       )}
@@ -121,7 +120,6 @@ function Board({ me }: { me: Me }) {
         <button class="btn btn--quiet" type="button" onClick={copy}>
           {copied ? t('family.copied') : t('family.copy')}
         </button>
-        <p class="caption">{t('family.inviteShare')}</p>
       </section>
 
       <section class="board">
@@ -132,6 +130,9 @@ function Board({ me }: { me: Me }) {
           {standings?.map((s, i) => (
             <li key={s.userId} class="board__row" data-me={s.userId === me.id}>
               <span class="board__place">{i + 1}</span>
+              <span class="board__avatar">
+                <Avatar name={s.name} src={s.avatarUrl} size="head" />
+              </span>
               <span class="board__name">{s.name}</span>
               <span class="board__minutes">
                 <span class="stat__value">{s.weekMinutes}</span>
@@ -143,7 +144,6 @@ function Board({ me }: { me: Me }) {
             </li>
           ))}
         </ol>
-        <p class="caption">{t('family.byMinutes')}</p>
       </section>
 
       <button class="btn btn--quiet" type="button" onClick={() => void signOut()}>
@@ -159,7 +159,7 @@ export function Family() {
     <main class="screen screen--tabbed family">
       {a.state === 'user' ? (
         <header class="profile">
-          <Avatar name={a.me.name} large />
+          <Avatar name={a.me.name} src={a.me.avatarUrl} size="large" />
           <div class="profile__who">
             <h1 class="h2">{a.me.name}</h1>
             <p class="caption">
@@ -172,7 +172,6 @@ export function Family() {
           <Icon name={a.state === 'guest' ? 'login-1' : 'user-single-neutral-male'} size={48} />
           <div class="profile__who">
             <h1 class="h2">{a.state === 'guest' ? t('profile.guest') : t('tab.profile')}</h1>
-            {a.state === 'guest' && <p class="caption">{t('profile.guestHint')}</p>}
           </div>
         </header>
       )}

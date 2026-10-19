@@ -19,6 +19,8 @@ export interface Me {
   id: string;
   login: string;
   name: string;
+  /** Фото профиля; null — буква имени. */
+  avatarUrl: string | null;
   family: { id: string; name: string; inviteCode: string };
 }
 
@@ -38,14 +40,19 @@ export class ApiError extends Error {
   }
 }
 
-/** Запрос к API. Сообщение ошибки — от сервера, если он его прислал. */
-export async function api<T>(path: string, body?: unknown): Promise<T> {
+/**
+ * Запрос к API. Сообщение ошибки — от сервера, если он его прислал. Есть
+ * тело — POST, иначе GET; другой метод — явно. FormData уходит как
+ * multipart: заголовок с границей ставит браузер.
+ */
+export async function api<T>(path: string, body?: unknown, method?: 'PUT' | 'DELETE'): Promise<T> {
+  const form = body instanceof FormData;
   let res: Response;
   try {
     res = await fetch(`/api${path}`, {
-      method: body === undefined ? 'GET' : 'POST',
-      headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
-      body: body === undefined ? null : JSON.stringify(body),
+      method: method ?? (body === undefined ? 'GET' : 'POST'),
+      headers: body === undefined || form ? {} : { 'Content-Type': 'application/json' },
+      body: body === undefined ? null : form ? body : JSON.stringify(body),
       credentials: 'same-origin',
     });
   } catch {

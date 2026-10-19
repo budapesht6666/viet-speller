@@ -43,7 +43,6 @@ function Picker({ onPick }: { onPick: (sc: Scenario) => void }) {
   const done = progress.value.doneLessons;
   return (
     <>
-      <p class="lead">{t('talk.lead')}</p>
       <ul class="talk__list">
         {scenarios.map((sc) => {
           const first = opensAfter(sc);

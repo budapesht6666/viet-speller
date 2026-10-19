@@ -90,7 +90,6 @@ export function Phrasebook() {
       <header class="home__hero">
         <h1 class="display">{t('home.phrasebook')}</h1>
       </header>
-      <p class="caption">{t('book.offline')}</p>
 
       {learned === 0 ? (
         <p class="lead">{t('book.empty')}</p>

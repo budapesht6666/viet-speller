@@ -9,7 +9,7 @@ import { lessons } from '@viet/content';
 import { player } from '../audio/samples.js';
 import { LessonBlockers } from '../components/AppStatus.js';
 import { Level } from '../components/Level.js';
-import { ProfileButton, SettingsButton } from '../components/TabBar.js';
+import { ProfileButton, SettingsButton, UpdateIndicator } from '../components/TabBar.js';
 import { Icon } from '../components/ui.js';
 import { dailyGoal, go, noMic, noMicUntil, now, progress, setNoMic } from '../store/app.js';
 import { openTopics, shownTopic } from '../store/path.js';
@@ -37,6 +37,7 @@ export function Home() {
       <header class="home__hero home__title">
         <h1 class="display">{t('appName')}</h1>
         <div class="home__actions">
+          <UpdateIndicator />
           <SettingsButton />
           <ProfileButton />
         </div>
@@ -72,7 +73,6 @@ export function Home() {
         <button class="card home__tile" type="button" onClick={() => go({ name: 'talk' })}>
           <Icon name="chat-bubble-square-question" size={28} />
           <span class="home__tileTitle">{t('talk.title')}</span>
-          <span class="caption">{t('talk.cardHint')}</span>
         </button>
       </div>
 
@@ -80,7 +80,6 @@ export function Home() {
         <button class="chip" type="button" role="switch" aria-checked={noMic.value} onClick={() => setNoMic(!noMic.value)}>
           {noMic.value ? `${t('noMic.off')} (${t('noMic.active')} ${noMicLeft} мин)` : t('noMic.on')}
         </button>
-        <span class="caption">{t('noMic.hint')}</span>
       </div>
 
       <section class="path" aria-label={t('home.path')}>
@@ -90,7 +89,6 @@ export function Home() {
             <Level level={topicLevel(topic, p)} />
           </div>
           <p class="caption">{topic.summary}</p>
-          {topic.lessons.every((l) => l.listenOnly) && <p class="caption path__listen">{t('home.listenOnly')}</p>}
           <ol class="path__lessons">
             {topic.lessons.map((l) => {
               const done = p.doneLessons.has(l.id);

@@ -17,6 +17,37 @@ import { signal } from '@preact/signals';
 export type PwaState = 'pending' | 'ready' | 'error' | 'off';
 export const pwa = signal<PwaState>('pending');
 
+/**
+ * Идёт ли сейчас фоновая установка — первая или обновление. Пока новый
+ * service worker качает предзагрузку (вся озвучка — десятки мегабайт) и
+ * встаёт на место, в шапке крутится значок.
+ */
+export const updating = signal(false);
+
+type Worker = Pick<ServiceWorker, 'state' | 'addEventListener'>;
+
+/**
+ * Следит за service worker'ами, которые ещё не встали: `installing` (качает),
+ * `installed` (скачал, ждёт), `activating` (занимает место). `activated` и
+ * `redundant` — конец, значок гаснет. Воркеров бывает больше одного: новое
+ * обновление может прийти, пока ставится прошлое.
+ */
+export function workerTracker(onChange: (busy: boolean) => void): (worker: Worker | null | undefined) => void {
+  const busy = new Set<Worker>();
+  const watched = new WeakSet<Worker>();
+  return (worker) => {
+    if (!worker || watched.has(worker)) return;
+    watched.add(worker);
+    const sync = () => {
+      if (worker.state === 'installing' || worker.state === 'installed' || worker.state === 'activating') busy.add(worker);
+      else busy.delete(worker);
+      onChange(busy.size > 0);
+    };
+    worker.addEventListener('statechange', sync);
+    sync();
+  };
+}
+
 export function startPwa(): void {
   // В разработке и в e2e service worker'а нет — и состояния тоже.
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) {
@@ -43,9 +74,13 @@ export function startPwa(): void {
     else document.addEventListener('visibilitychange', reloadWhenHidden);
   });
 
+  const track = workerTracker((busy) => (updating.value = busy));
   const register = () => {
     sw.register('/sw.js', { scope: '/' })
       .then(async (reg) => {
+        // До ожидания ready: первая установка идёт как раз сейчас.
+        track(reg.installing ?? reg.waiting);
+        reg.addEventListener('updatefound', () => track(reg.installing));
         await sw.ready;
         pwa.value = 'ready';
         // Приложение на домашнем экране живёт днями, не перезапускаясь:

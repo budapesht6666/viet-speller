@@ -10,7 +10,7 @@ export class UsersService {
   }
 
   findById(id: string) {
-    return this.prisma.user.findUnique({ where: { id }, include: { family: true } });
+    return this.prisma.user.findUnique({ where: { id }, include: { family: true, avatar: { select: { updatedAt: true } } } });
   }
 
   create(data: { login: string; name: string; passwordHash: string; familyId: string }) {

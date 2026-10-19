@@ -32,6 +32,21 @@ const lessonDone = (lessonId: string, seconds = 300) => ({
   mic: true,
 });
 
+/**
+ * Вход ограничен по частоте (AUTH_LIMIT: 10 в минуту), а сценариев много.
+ * Вошедший агент один на логин и переиспользуется.
+ */
+const sessions = new Map<string, ReturnType<typeof request.agent>>();
+async function signedIn(login: string) {
+  let agent = sessions.get(login);
+  if (!agent) {
+    agent = request.agent(app.getHttpServer());
+    await agent.post('/api/auth/login').send({ login, password: 'long-password' }).expect(200);
+    sessions.set(login, agent);
+  }
+  return agent;
+}
+
 beforeAll(async () => {
   // NestFactory, а не Test.createTestingModule: тестовый модуль создаёт
   // провайдеры раньше, чем у приложения появляется HTTP-адаптер, и
@@ -149,8 +164,7 @@ describe('семья, синхронизация, рейтинг', () => {
   });
 
   it('рейтинг семьи — по минутам за неделю, тем же кодом ядра', async () => {
-    const anna = request.agent(app.getHttpServer());
-    await anna.post('/api/auth/login').send({ login: 'anna', password: 'long-password' });
+    const anna = await signedIn('anna');
     await anna.post('/api/sync').send({ since: 0, events: [lessonDone('alphabet-1', 900)] }).expect(200);
     const res = await anna.get('/api/leaderboard').expect(200);
     expect(res.body.standings.map((s: { name: string; weekMinutes: number }) => [s.name, s.weekMinutes])).toEqual([
@@ -164,8 +178,7 @@ describe('семья, синхронизация, рейтинг', () => {
 describe('ачивки', () => {
   it('личные — из своего журнала, семейные — из журналов всей семьи', async () => {
     // Павел и Аня из прошлых сценариев занимались сегодня оба.
-    const anna = request.agent(app.getHttpServer());
-    await anna.post('/api/auth/login').send({ login: 'anna', password: 'long-password' });
+    const anna = await signedIn('anna');
     const res = await anna.get('/api/achievements').expect(200);
     expect(res.body.earned).toContain('family-day');
     expect(res.body.family).toContain('family-day');
@@ -175,11 +188,9 @@ describe('ачивки', () => {
 
 describe('журнал распознавания', () => {
   const said = (itemId: string, heard: string, engine = 'apple') => ({ id: uuid(), at: new Date().toISOString(), itemId, heard, engine });
-  // Один вход на весь блок: вход ограничен по частоте (AUTH_LIMIT).
   let p: ReturnType<typeof request.agent>;
   beforeAll(async () => {
-    p = request.agent(app.getHttpServer());
-    await p.post('/api/auth/login').send({ login: 'pavel', password: 'long-password' }).expect(200);
+    p = await signedIn('pavel');
   });
 
   it('без входа закрыт', async () => {
@@ -206,5 +217,58 @@ describe('журнал распознавания', () => {
   it('попытка неверной формы — 400', async () => {
     await p.post('/api/speech').send({ attempts: [{ ...said('pol-cam-on', 'x'), engine: 'nokia' }] }).expect(400);
     await p.post('/api/speech').send({ attempts: [{ ...said('pol-cam-on', 'x'), id: 'nope' }] }).expect(400);
+  });
+});
+
+describe('фото профиля', () => {
+  // Настоящий PNG 1×1: FileTypeValidator смотрит на содержимое файла, а не на имя.
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  let pavel: ReturnType<typeof request.agent>;
+  let anna: ReturnType<typeof request.agent>;
+  let stranger: ReturnType<typeof request.agent>;
+  let pavelId = '';
+
+  beforeAll(async () => {
+    pavel = await signedIn('pavel');
+    anna = await signedIn('anna');
+    stranger = request.agent(app.getHttpServer());
+    await stranger.post('/api/auth/register').send({ login: 'stranger', password: 'long-password', name: 'Чужой' }).expect(201);
+    pavelId = (await pavel.get('/api/auth/me').expect(200)).body.id;
+  });
+
+  it('без фото — буква имени: avatarUrl пустой', async () => {
+    expect((await pavel.get('/api/auth/me').expect(200)).body.avatarUrl).toBeNull();
+  });
+
+  it('загрузка: адрес приходит в /auth/me и в рейтинге, картинка отдаётся семье', async () => {
+    const res = await pavel.put('/api/users/me/avatar').attach('image', png, { filename: 'me.png', contentType: 'image/png' }).expect(200);
+    expect(res.body.avatarUrl).toMatch(/^\/api\/users\/[0-9a-f-]{36}\/avatar\?v=\d+$/);
+    expect(res.body.avatarUrl).toContain(pavelId);
+    expect((await pavel.get('/api/auth/me').expect(200)).body.avatarUrl).toBe(res.body.avatarUrl);
+    const board = (await anna.get('/api/leaderboard').expect(200)).body.standings;
+    expect(board.find((s: { userId: string }) => s.userId === pavelId).avatarUrl).toBe(res.body.avatarUrl);
+
+    const img = await anna.get(res.body.avatarUrl).buffer(true).expect(200);
+    expect(img.headers['content-type']).toBe('image/png');
+    expect(img.headers['cache-control']).toContain('immutable');
+    expect(Buffer.compare(img.body, png)).toBe(0);
+  });
+
+  it('чужой семье фото не видно — 404', async () => {
+    await stranger.get(`/api/users/${pavelId}/avatar`).expect(404);
+  });
+
+  it('не картинка, без файла и слишком большой файл — отказ', async () => {
+    await pavel.put('/api/users/me/avatar').attach('image', Buffer.from('<svg/>'), { filename: 'x.png', contentType: 'image/png' }).expect(400);
+    await pavel.put('/api/users/me/avatar').expect(400);
+    const huge = Buffer.concat([png, Buffer.alloc(400 * 1024)]);
+    const res = await pavel.put('/api/users/me/avatar').attach('image', huge, { filename: 'big.png', contentType: 'image/png' });
+    expect([400, 413]).toContain(res.status);
+  });
+
+  it('удаление — снова буква, картинки нет', async () => {
+    await pavel.delete('/api/users/me/avatar').expect(204);
+    expect((await pavel.get('/api/auth/me').expect(200)).body.avatarUrl).toBeNull();
+    await anna.get(`/api/users/${pavelId}/avatar`).expect(404);
   });
 });

@@ -4,6 +4,7 @@ import * as argon2 from 'argon2';
 import { FamilyService } from '../family/family.service.js';
 import { UsersService } from '../users/users.service.js';
 import type { LoginDto, RegisterDto } from './auth.dto.js';
+import { avatarUrl } from '../avatars/avatar-url.js';
 
 @Injectable()
 export class AuthService {
@@ -39,7 +40,13 @@ export class AuthService {
   async me(userId: string) {
     const user = await this.users.findById(userId);
     if (!user) throw new UnauthorizedException();
-    return { id: user.id, login: user.login, name: user.name, family: { id: user.family.id, name: user.family.name, inviteCode: user.family.inviteCode } };
+    return {
+      id: user.id,
+      login: user.login,
+      name: user.name,
+      avatarUrl: avatarUrl(user.id, user.avatar),
+      family: { id: user.family.id, name: user.family.name, inviteCode: user.family.inviteCode },
+    };
   }
 
   private token(userId: string): Promise<string> {

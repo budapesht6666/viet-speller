@@ -14,6 +14,7 @@ import { LeaderboardModule } from './leaderboard/leaderboard.module.js';
 import { AchievementsModule } from './achievements/achievements.module.js';
 import { TalkModule } from './talk/talk.module.js';
 import { SpeechModule } from './speech/speech.module.js';
+import { AvatarsModule } from './avatars/avatars.module.js';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { SpeechModule } from './speech/speech.module.js';
     AchievementsModule,
     TalkModule,
     SpeechModule,
+    AvatarsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -28,6 +28,9 @@
 `SpeechModule` (журнал распознавания) не берёт ничего, кроме глобального
 `PrismaModule`: попытки — отдельная таблица, а не события прогресса, и
 отчёт считает по ним функция ядра `speechReport`.
+`AvatarsModule` (фото профиля) — тоже сам по себе: адрес фото в `/auth/me`
+и рейтинге собирает функция `avatarUrl`, а не сервис, поэтому ни
+`AuthModule`, ни `LeaderboardModule` от него не зависят.
 
 ## Провайдер и внедрение зависимостей — `@Injectable`, конструктор
 
@@ -175,6 +178,37 @@ DTO — класс, описывающий тело запроса декора�
 не сохраняет тип элементов массива в метаданных, и без `@Type` проверки
 элементов не случилось бы вовсе. Поля, нужные одному типу события, —
 `@ValidateIf` (`src/progress/progress.dto.ts`).
+
+## Загрузка файла — `FileInterceptor`, `ParseFilePipe`
+
+Рецепт — https://docs.nestjs.com/techniques/file-upload. Фото профиля
+(`src/avatars/avatars.controller.ts`) приходит как multipart, поле `image`.
+
+- `@UseInterceptors(FileInterceptor('image', { limits }))` — **interceptor**:
+  код вокруг обработчика. Этот разбирает multipart через multer до вызова
+  метода и кладёт файл в запрос. `limits.fileSize` обрывает слишком большой
+  файл ещё на входе, пока он не занял память.
+- `@UploadedFile(new ParseFilePipe({ validators }))` — **pipe** на параметре:
+  достаёт файл и проверяет его. `MaxFileSizeValidator` — размер,
+  `FileTypeValidator` — тип **по содержимому** (сигнатура файла), а не по
+  имени или заголовку: SVG, назвавшийся `image/png`, получает 400. Без
+  файла — тоже 400.
+- Тип `Express.Multer.File` — из `@types/multer`, его пришлось добавить в
+  `types` в `tsconfig.json`: там перечислено, какие глобальные типы видны.
+
+Почему так, а не base64 в JSON: это и есть способ Nest для файлов, а
+base64 раздувает картинку на треть и обходит проверку типа по содержимому.
+
+## Отдача файла — `StreamableFile`, `@Header`
+
+Картинку отдаёт `GET /api/users/:id/avatar`: обработчик возвращает
+`new StreamableFile(bytes, { type, length })`, и Nest сам ставит
+`Content-Type` и `Content-Length` вместо сериализации в JSON. Постоянный
+заголовок — декоратором `@Header('Cache-Control', …)`: адрес картинки
+содержит время обновления (`?v=…`), поэтому кешировать её можно навсегда.
+
+`ParseUUIDPipe` на `@Param('id')` — встроенный pipe: не UUID — 400 до
+запроса в базу.
 
 ## Исключения
 
