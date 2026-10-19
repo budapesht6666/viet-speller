@@ -156,7 +156,7 @@ svg {
 }
 
 .phrase__ru {
-  margin: var(--space-2) 0 0;
+  margin: calc(-1 * var(--space-2)) 0 0;
   font-size: var(--text-lead);
   color: var(--c-text-muted);
 }
@@ -270,7 +270,7 @@ svg {
 /* ── Итог шага ─────────────────────────────────────────────────────────── */
 
 .verdict {
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
   font-weight: var(--weight-bold);
 }
@@ -467,6 +467,8 @@ svg {
 .play__btn {
   width: auto;
   flex: 1;
+  min-height: var(--tap-min);
+  padding: var(--space-2) var(--space-4);
 }
 
 .play .caption {
@@ -477,14 +479,20 @@ svg {
 
 .options {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
+}
+
+/* Короткие вьетнамские варианты — в две колонки: четыре варианта по одному
+   в строку не помещались на экран вместе с кнопкой «Дальше». */
+.options[data-cols='2'] {
+  grid-template-columns: 1fr 1fr;
 }
 
 .option {
-  min-height: 56px;
-  padding: var(--space-3) var(--space-4);
+  min-height: 52px;
+  padding: var(--space-2) var(--space-4);
   border: 2px solid var(--c-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--c-paper);
   font-size: var(--text-h2);
   font-weight: var(--weight-bold);
@@ -574,8 +582,8 @@ svg {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 88px;
-  height: 88px;
+  width: 76px;
+  height: 76px;
   border: 3px solid var(--c-accent);
   border-radius: var(--radius-pill);
   background: var(--c-accent-wash);

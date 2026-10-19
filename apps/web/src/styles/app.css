@@ -10,6 +10,63 @@
   padding-top: var(--space-6);
 }
 
+.home__title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.profile-btn {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: var(--tap-min);
+  max-width: 96px;
+}
+
+.profile-btn .caption {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.path__all {
+  margin-top: var(--space-3);
+}
+
+.topics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topics__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  border: 2px solid transparent;
+  text-align: left;
+}
+
+.topics__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.topics__item[aria-current='true'] {
+  border-color: var(--c-accent);
+}
+
 .home__today {
   margin: calc(-1 * var(--space-3)) 0 0;
   text-align: center;
@@ -217,28 +274,39 @@
   gap: var(--space-2);
 }
 
-.home__review {
+.home__tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.home__tile {
   display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-3);
   border: 0;
   text-align: left;
 }
 
-.home__review > span {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.home__review:disabled {
+.home__tile:disabled {
   opacity: 0.6;
 }
 
+.home__tileTitle {
+  font-weight: var(--weight-black);
+}
+
+.home__nomic {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .home__nomic .caption {
-  margin: var(--space-2) 0 0;
-  text-align: center;
+  margin: 0;
 }
 
 .path {
@@ -296,8 +364,12 @@
 
 /* ── Урок ──────────────────────────────────────────────────────────────── */
 
+/* Урок не прокручивается целиком: шапка с прогрессом и низ с «Дальше»
+   стоят на месте, а если шаг не влез — прокручивается только середина.
+   Тянуться за кнопкой на каждом шаге — главное, что раздражало. */
 .lesson {
-  gap: var(--space-4);
+  gap: var(--space-3);
+  overflow-y: hidden;
 }
 
 .lesson__top {
@@ -323,7 +395,9 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .lesson__body .eyebrow {
@@ -333,7 +407,7 @@
 .lesson__hint,
 .lesson__dialect {
   margin: 0;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   background: var(--c-surface);
   font-size: var(--text-small);
@@ -367,8 +441,9 @@
 
 .lesson__foot {
   display: flex;
+  flex: none;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 /* ── Итог ──────────────────────────────────────────────────────────────── */

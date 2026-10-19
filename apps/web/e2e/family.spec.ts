@@ -13,8 +13,10 @@ async function register(page: Page, login: string, name: string, invite = '') {
   await page.locator('form').getByRole('button', { name: 'Регистрация' }).click();
   await expect(page.locator('.family__code')).toHaveText(/^[A-Z2-9]{6}$/);
   // Вход виден на вкладке: имя вместо «Войти».
-  await expect(page.locator('.tabbar')).toContainText(name);
-  await expect(page.locator('.tabbar')).not.toContainText('Войти');
+  await page.getByRole('button', { name: 'Учёба' }).click();
+  await expect(page.locator('.profile-btn')).toContainText(name);
+  await expect(page.locator('.profile-btn')).not.toContainText('Войти');
+  await page.locator('.profile-btn').click();
 }
 
 /** Проходит первый урок верными ответами. */

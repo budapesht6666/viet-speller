@@ -45,12 +45,14 @@ export type Route =
   | { name: 'done'; summary: Summary }
   | { name: 'phrasebook' }
   | { name: 'progress' }
+  | { name: 'topics' }
   | { name: 'talk' }
   | { name: 'family' };
 
 /** Экраны с нижней панелью вкладок. Урок и итог идут без неё: там не отвлекаем. */
-export type TabName = 'home' | 'phrasebook' | 'progress' | 'family';
-export const TAB_NAMES: ReadonlySet<Route['name']> = new Set<TabName>(['home', 'phrasebook', 'progress', 'family']);
+export type TabName = 'home' | 'topics' | 'phrasebook' | 'progress';
+/** Профиль — не вкладка, но панель на нём есть: с неё и возвращаются. */
+export const TAB_NAMES: ReadonlySet<Route['name']> = new Set<Route['name']>(['home', 'topics', 'phrasebook', 'progress', 'family']);
 
 export const route = signal<Route>({ name: 'home' });
 

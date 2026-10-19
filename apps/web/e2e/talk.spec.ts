@@ -52,13 +52,13 @@ test('собеседник: гостя просит войти, разговор
   });
 
   await page.goto('/');
-  await page.getByRole('button', { name: /Поговорить с собеседником/ }).click();
+  await page.getByRole('button', { name: /^Собеседник/ }).click();
   await expect(page.getByText(/работает только после входа/)).toBeVisible();
   await page.getByRole('button', { name: 'Закрыть' }).click();
 
   await seedUntilMarket(page);
   await register(page);
-  await page.getByRole('button', { name: /Поговорить с собеседником/ }).click();
+  await page.getByRole('button', { name: /^Собеседник/ }).click();
   // Рынок открыт, парикмахер — нет: его тема ещё не пройдена.
   await expect(page.getByRole('button', { name: /Парикмахер/ })).toBeDisabled();
   await page.getByRole('button', { name: /Рынок/ }).click();

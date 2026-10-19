@@ -96,8 +96,8 @@ test('урок с микрофоном: «повтори» и «скажи» з�
 
 test('без микрофона урок не просит говорить', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Не могу говорить' }).click();
-  await expect(page.getByRole('button', { name: /Снова говорить/ })).toBeVisible();
+  await page.getByRole('switch', { name: 'Не могу говорить' }).click();
+  await expect(page.getByRole('switch', { name: /Снова говорить/ })).toBeVisible();
   await page.getByRole('button', { name: 'Начать первый урок' }).click();
   await expect(page.locator('main.lesson')).toBeVisible();
   await expect(page.getByText('Урок без микрофона')).toBeVisible();
@@ -128,4 +128,33 @@ test('разговорник: пройденное ищется по-русск�
   await page.getByRole('button', { name: 'Разговорник' }).click();
   await page.getByRole('switch', { name: 'Только избранное' }).click();
   await expect(page.locator('.book__vi')).toHaveText(['về']);
+});
+
+test('главная: только последняя открытая тема, закрытых не видно, другую выбирают на «Темах»', async ({ page }) => {
+  await page.goto('/');
+  // Новичок: одна тема — алфавит, кнопки «Все темы» нет.
+  await expect(page.locator('.path__topic .eyebrow')).toHaveText('Алфавит и звуки');
+  await expect(page.getByRole('button', { name: /Все темы/ })).toHaveCount(0);
+
+  const before = lessons.slice(0, lessons.findIndex((l) => l.id === 'numbers-1')).map((l) => l.id);
+  await page.evaluate(async (ids) => {
+    const db = await new Promise<IDBDatabase>((ok, fail) => {
+      const r = indexedDB.open('viet-speller', 1);
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => fail(r.error);
+    });
+    const tx = db.transaction('events', 'readwrite');
+    ids.forEach((lessonId, i) =>
+      tx.objectStore('events').put({ id: `seed-${i}`, at: new Date(Date.now() - 86_400_000).toISOString(), seconds: 120, type: 'lesson-done', lessonId, grades: {}, accuracy: 1, mic: false }),
+    );
+    await new Promise((ok) => (tx.oncomplete = ok));
+  }, before);
+  await page.reload();
+
+  await expect(page.locator('.path__topic .eyebrow')).toHaveText('Цифры и цены');
+  await expect(page.getByText('Кафе и уличная еда')).toHaveCount(0);
+  await page.getByRole('button', { name: /Все темы \(3\)/ }).click();
+  await expect(page.locator('.topics__item')).toHaveCount(3);
+  await page.locator('.topics__item', { hasText: 'Алфавит и звуки' }).click();
+  await expect(page.locator('.path__topic .eyebrow')).toHaveText('Алфавит и звуки');
 });

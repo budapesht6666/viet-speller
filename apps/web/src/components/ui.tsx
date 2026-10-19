@@ -87,8 +87,11 @@ export interface OptionView {
 }
 
 export function Options({ options, onPick, disabled, lang }: { options: OptionView[]; onPick: (id: string) => void; disabled: boolean; lang: 'vi' | 'ru' }) {
+  // Две колонки — только для коротких вьетнамских слов; русский перевод и
+  // фразы в полстроки не влезают.
+  const cols = lang === 'vi' && options.every((o) => o.label.length <= 12) ? 2 : 1;
   return (
-    <div class="options">
+    <div class="options" data-cols={cols}>
       {options.map((o) => (
         <button key={o.id} class="option" type="button" lang={lang} data-id={o.id} data-mark={o.mark} disabled={disabled} onClick={() => onPick(o.id)}>
           {o.label}

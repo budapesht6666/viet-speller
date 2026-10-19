@@ -50,9 +50,12 @@ test('снимки', async ({ page }) => {
 
   await page.getByRole('button', { name: 'На главную' }).click();
   await page.screenshot({ path: `${OUT}/05-tab-learn.png` });
-  for (const [tab, file] of [['Разговорник', '06-tab-book'], ['Успехи', '07-tab-progress'], ['Войти', '08-tab-profile']] as const) {
+  for (const [tab, file] of [['Темы', '06-tab-topics'], ['Разговорник', '06-tab-book'], ['Успехи', '07-tab-progress']] as const) {
     await page.locator('.tabbar').getByRole('button', { name: tab }).click();
     await page.waitForTimeout(200);
     await page.screenshot({ path: `${OUT}/${file}.png` });
   }
+  await page.locator('.tabbar').getByRole('button', { name: 'Учёба' }).click();
+  await page.locator('.profile-btn').click();
+  await page.screenshot({ path: `${OUT}/08-profile.png` });
 });
