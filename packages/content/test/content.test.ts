@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { normalize, stripTone, VI } from '@viet/core';
 import { describe, expect, it } from 'vitest';
-import { audioFile, item, items, lessons, SPEEDS, topics, type Speed } from '../src/index.js';
+import { audioFile, item, items, lessons, scenarios, SPEEDS, topics, type Speed } from '../src/index.js';
 
 const AUDIO_DIR = fileURLToPath(new URL('../../../apps/web/public/audio/', import.meta.url));
 const expressions = (i: (typeof items)[number]) => [i.vi, ...(i.alt ?? [])];
@@ -117,5 +117,13 @@ describe('выговор', () => {
         return Object.values(i.dialect!).some((v) => normalize(v).some((s) => !said.has(stripTone(s))));
       });
     expect(bad.map((i) => i.id)).toEqual([]);
+  });
+});
+
+describe('сценарии собеседника', () => {
+  it('id уникальны и каждый ссылается на существующую тему', () => {
+    const ids = scenarios.map((s) => s.id);
+    expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([]);
+    expect(scenarios.filter((s) => !topics.some((t) => t.id === s.topicId)).map((s) => s.id)).toEqual([]);
   });
 });

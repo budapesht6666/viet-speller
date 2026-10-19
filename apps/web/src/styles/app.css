@@ -531,3 +531,102 @@
 .path__head .eyebrow {
   margin: 0;
 }
+
+/* ── Собеседник ────────────────────────────────────────────────────────── */
+
+.talk {
+  gap: var(--space-4);
+}
+
+.talk__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.talk__scenario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  border: 0;
+  text-align: left;
+}
+
+.talk__scenario:disabled {
+  opacity: 0.55;
+}
+
+.talk__goal .eyebrow,
+.talk__goal .caption {
+  margin: 0;
+}
+
+.talk__log {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.talk__bubble {
+  max-width: 85%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--c-surface);
+}
+
+.talk__bubble[data-who='me'] {
+  align-self: flex-end;
+  background: var(--c-accent-wash);
+}
+
+.talk__bubble .caption {
+  margin: var(--space-1) 0 0;
+}
+
+.talk__vi {
+  margin: 0;
+  font-size: var(--text-lead);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-phrase);
+}
+
+.talk__error {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.talk__bar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-3);
+}
+
+.talk__hint {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+}
+
+.talk__type {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.talk__type .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.talk__type .btn {
+  flex: none;
+  width: auto;
+  padding-inline: var(--space-5);
+}

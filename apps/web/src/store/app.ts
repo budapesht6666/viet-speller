@@ -45,6 +45,7 @@ export type Route =
   | { name: 'done'; summary: Summary }
   | { name: 'phrasebook' }
   | { name: 'progress' }
+  | { name: 'talk' }
   | { name: 'family' };
 
 /** Экраны с нижней панелью вкладок. Урок и итог идут без неё: там не отвлекаем. */

@@ -76,6 +76,14 @@ export function Home() {
         </span>
       </button>
 
+      <button class="card home__review" type="button" onClick={() => go({ name: 'talk' })}>
+        <Icon name="chat-bubble-square-question" size={32} />
+        <span>
+          <span class="h2">{t('talk.card')}</span>
+          <span class="caption">{t('talk.cardHint')}</span>
+        </span>
+      </button>
+
       <div class="home__nomic">
         <button class="btn btn--quiet" type="button" onClick={() => setNoMic(!noMic.value)}>
           {noMic.value ? `${t('noMic.off')} (${t('noMic.active')} ${noMicLeft} мин)` : t('noMic.on')}

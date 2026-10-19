@@ -21,6 +21,8 @@ import { leisure, leisureItems, smalltalk, smalltalkItems } from './life/leisure
 import { barber, barberItems, delivery, deliveryItems, laundry, laundryItems } from './life/services.js';
 
 export { achievements } from './achievements.js';
+export { scenario, scenarios } from './scenarios.js';
+export type { Scenario } from './scenarios.js';
 export { audioFile, audioKey, SPEEDS, VOICE } from './audio.js';
 export type { Speed } from './audio.js';
 

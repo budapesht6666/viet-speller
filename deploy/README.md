@@ -17,6 +17,10 @@ cp /srv/apps/viet-speller/repo/deploy/compose.yml /srv/apps/viet-speller/compose
 
 # Секрет сессий — свой на этом сервере, в git его нет.
 echo "JWT_SECRET=$(openssl rand -base64 48)" > /srv/apps/viet-speller/.env
+# Ключи ИИ-собеседника, бесплатные тарифы (apps/api/.env.example).
+# Без них собеседник показывает «не настроен», остальное работает.
+echo "GEMINI_API_KEY=..." >> /srv/apps/viet-speller/.env
+echo "GROQ_API_KEY=..."   >> /srv/apps/viet-speller/.env
 chmod 600 /srv/apps/viet-speller/.env
 
 vps deploy viet-speller

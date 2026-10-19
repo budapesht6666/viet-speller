@@ -5,6 +5,7 @@ import { Home } from './screens/Home.js';
 import { Phrasebook } from './screens/Phrasebook.js';
 import { Progress } from './screens/Progress.js';
 import { LessonScreen, ReviewScreen } from './screens/Sessions.js';
+import { Talk } from './screens/Talk.js';
 import { route, TAB_NAMES } from './store/app.js';
 
 function Screen() {
@@ -23,6 +24,8 @@ function Screen() {
       return <Phrasebook />;
     case 'progress':
       return <Progress />;
+    case 'talk':
+      return <Talk />;
     default:
       return <Home />;
   }

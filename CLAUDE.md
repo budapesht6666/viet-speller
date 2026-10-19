@@ -240,6 +240,6 @@ Cloudflare quick tunnel, поэтому в `vite.config.ts` `host: true` и
 
 ## Секреты
 
-Ключи (`ELEVENLABS_API_KEY`, ключ бесплатного LLM, `JWT_SECRET`) только в
+Ключи (`ELEVENLABS_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `JWT_SECRET`) только в
 `.env`, он в `.gitignore`. В репозитории — `.env.example`. На сервере `.env`
 создаётся руками, `chmod 600`.

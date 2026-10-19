@@ -15,6 +15,10 @@ const env = {
   JWT_SECRET: 'e2e-secret-not-for-production',
   WEB_DIST: '../web/dist',
   PORT: '3000',
+  // Настоящий ИИ в e2e не зовём: ответы подменяет сам тест (talk.spec.ts),
+  // а пустые ключи сильнее тех, что лежат в apps/api/.env.
+  GEMINI_API_KEY: '',
+  GROQ_API_KEY: '',
 };
 rmSync(`${api}data/e2e.db`, { force: true });
 execSync('npx prisma migrate deploy', { cwd: api, env, stdio: 'ignore' });

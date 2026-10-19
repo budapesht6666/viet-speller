@@ -12,6 +12,7 @@ import { FamilyModule } from './family/family.module.js';
 import { ProgressModule } from './progress/progress.module.js';
 import { LeaderboardModule } from './leaderboard/leaderboard.module.js';
 import { AchievementsModule } from './achievements/achievements.module.js';
+import { TalkModule } from './talk/talk.module.js';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { AchievementsModule } from './achievements/achievements.module.js';
     ProgressModule,
     LeaderboardModule,
     AchievementsModule,
+    TalkModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

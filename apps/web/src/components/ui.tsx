@@ -67,10 +67,10 @@ export function PlayButtons({ text, autoPlay }: { text: string; autoPlay?: boole
   );
 }
 
-export function MicButton({ status, onTap }: { status: ListenStatus; onTap: () => void }) {
+export function MicButton({ status, onTap, disabled }: { status: ListenStatus; onTap: () => void; disabled?: boolean }) {
   const live = status === 'listening' || status === 'starting';
   return (
-    <button class="mic" type="button" data-live={live} onClick={onTap} disabled={live}>
+    <button class="mic" type="button" data-live={live} onClick={onTap} disabled={live || disabled}>
       <span class="mic__ring" aria-hidden="true">
         <Icon name="voice-typing-word-convert" size={40} />
       </span>
