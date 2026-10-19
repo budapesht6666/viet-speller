@@ -10,29 +10,116 @@
   padding-top: var(--space-6);
 }
 
-.home__title {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
+.home__today {
+  margin: calc(-1 * var(--space-3)) 0 0;
+  text-align: center;
 }
 
-.home__family {
+.path__listen {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+}
+
+/* ── Вкладки ───────────────────────────────────────────────────────────── */
+
+/* Экран-вкладка прокручивается над панелью: последний элемент не прячется
+   под ней и под полоской iPhone. */
+.screen--tabbed {
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--tabbar-height) + var(--space-6));
+}
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-tabs);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  max-width: var(--app-width);
+  margin-inline: auto;
+  padding: var(--space-1) var(--space-2) env(safe-area-inset-bottom);
+  border-top: var(--border-width) solid var(--c-border);
+  background: var(--c-paper);
+}
+
+.tabbar__tab {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
-  min-width: var(--tap-min);
+  min-width: 0;
+  height: var(--tabbar-height);
+  color: var(--c-text-muted);
+}
+
+.tabbar__tab .icon,
+.tabbar__tab .avatar {
+  opacity: 0.55;
+  transition: opacity var(--duration-instant) var(--ease-out);
+}
+
+.tabbar__tab[aria-current='page'] {
+  color: var(--c-text);
+}
+
+.tabbar__tab[aria-current='page'] .icon,
+.tabbar__tab[aria-current='page'] .avatar {
+  opacity: 1;
+}
+
+.tabbar__label {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-bold);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--avatar);
+  height: var(--avatar);
+  border-radius: var(--radius-pill);
+  background: var(--c-accent);
+  color: var(--c-accent-ink);
+  font-size: var(--text-small);
+  font-weight: var(--weight-black);
+  line-height: 1;
+}
+
+.avatar--large {
+  width: var(--avatar-large);
+  height: var(--avatar-large);
+  font-size: var(--text-h2);
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-6);
+}
+
+.profile__who {
+  min-width: 0;
+}
+
+.profile__who .h2,
+.profile__who .caption {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 /* ── Семья ─────────────────────────────────────────────────────────────── */
 
 .family {
   gap: var(--space-5);
-}
-
-.family .lesson__top .h2 {
-  flex: 1;
 }
 
 .family__invite {
@@ -316,19 +403,10 @@
   margin-bottom: var(--space-3);
 }
 
-.home__links {
-  display: flex;
-  gap: var(--space-2);
-}
-
 /* ── Разговорник ───────────────────────────────────────────────────────── */
 
 .book {
   gap: var(--space-4);
-}
-
-.book__title {
-  flex: 1;
 }
 
 .book > .caption {

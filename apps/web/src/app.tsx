@@ -1,11 +1,13 @@
+import { TabBar } from './components/TabBar.js';
 import { Done } from './screens/Done.js';
 import { Family } from './screens/Family.js';
 import { Home } from './screens/Home.js';
 import { Phrasebook } from './screens/Phrasebook.js';
+import { Progress } from './screens/Progress.js';
 import { LessonScreen, ReviewScreen } from './screens/Sessions.js';
-import { route } from './store/app.js';
+import { route, TAB_NAMES } from './store/app.js';
 
-export function App() {
+function Screen() {
   const r = route.value;
   switch (r.name) {
     case 'lesson':
@@ -19,7 +21,18 @@ export function App() {
       return <Family />;
     case 'phrasebook':
       return <Phrasebook />;
+    case 'progress':
+      return <Progress />;
     default:
       return <Home />;
   }
+}
+
+export function App() {
+  return (
+    <>
+      <Screen />
+      {TAB_NAMES.has(route.value.name) && <TabBar />}
+    </>
+  );
 }

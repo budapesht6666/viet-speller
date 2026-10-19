@@ -13,18 +13,23 @@
 
 import { fold, type Item } from '@viet/core';
 import { item, topics } from '@viet/content';
+import { createPortal } from 'preact/compat';
 import { useEffect, useState } from 'preact/hooks';
 import { player } from '../audio/samples.js';
 import { Icon, PlayButtons } from '../components/ui.js';
 import { readSetting, writeSetting } from '../store/db.js';
-import { go, progress } from '../store/app.js';
+import { progress } from '../store/app.js';
 import { t } from '../strings.js';
 
 const norm = (s: string) => fold(s.toLowerCase()).replace(/ё/g, 'е');
 
+/**
+ * Показ — порталом в body: внутри экрана он оказался бы в его слое, и панель
+ * вкладок легла бы поверх кнопок.
+ */
 function Show({ entry, onClose }: { entry: Item; onClose: () => void }) {
   const [flipped, setFlipped] = useState(false);
-  return (
+  return createPortal(
     <div class="show" role="dialog" aria-label={entry.ru}>
       <div class="show__card" data-flipped={flipped}>
         <p class="show__vi" lang="vi">
@@ -43,7 +48,8 @@ function Show({ entry, onClose }: { entry: Item; onClose: () => void }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -80,13 +86,9 @@ export function Phrasebook() {
   const learned = topics.flatMap((tp) => tp.lessons).filter((l) => done.has(l.id)).length;
 
   return (
-    <main class="screen book">
-      <header class="lesson__top">
-        <button class="lesson__close" type="button" aria-label={t('family.back')} onClick={() => go({ name: 'home' })}>
-          <span aria-hidden="true">×</span>
-        </button>
-        <h1 class="h2 book__title">{t('home.phrasebook')}</h1>
-        <Icon name="book-1" size={32} />
+    <main class="screen screen--tabbed book">
+      <header class="home__hero">
+        <h1 class="display">{t('home.phrasebook')}</h1>
       </header>
       <p class="caption">{t('book.offline')}</p>
 

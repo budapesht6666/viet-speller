@@ -47,4 +47,12 @@ test('снимки', async ({ page }) => {
   }
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${OUT}/04-done.png` });
+
+  await page.getByRole('button', { name: 'На главную' }).click();
+  await page.screenshot({ path: `${OUT}/05-tab-learn.png` });
+  for (const [tab, file] of [['Разговорник', '06-tab-book'], ['Успехи', '07-tab-progress'], ['Войти', '08-tab-profile']] as const) {
+    await page.locator('.tabbar').getByRole('button', { name: tab }).click();
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: `${OUT}/${file}.png` });
+  }
 });

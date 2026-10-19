@@ -44,7 +44,12 @@ export type Route =
   | { name: 'review' }
   | { name: 'done'; summary: Summary }
   | { name: 'phrasebook' }
+  | { name: 'progress' }
   | { name: 'family' };
+
+/** Экраны с нижней панелью вкладок. Урок и итог идут без неё: там не отвлекаем. */
+export type TabName = 'home' | 'phrasebook' | 'progress' | 'family';
+export const TAB_NAMES: ReadonlySet<Route['name']> = new Set<TabName>(['home', 'phrasebook', 'progress', 'family']);
 
 export const route = signal<Route>({ name: 'home' });
 

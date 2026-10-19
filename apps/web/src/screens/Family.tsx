@@ -1,10 +1,14 @@
 /**
- * Семья: вход, код-приглашение, недельный рейтинг по минутам практики.
+ * Профиль: вход, семья с кодом-приглашением, недельный рейтинг по минутам
+ * практики и состояние приложения.
+ *
+ * Шапка сразу говорит, вошёл ли человек: имя и буква в кружке — вошёл,
+ * «Вход» — нет. Та же примета — на вкладке внизу.
  */
 
 import { useEffect, useState } from 'preact/hooks';
-import { Icon, Status } from '../components/ui.js';
-import { go } from '../store/app.js';
+import { AppStatus } from '../components/AppStatus.js';
+import { Avatar, Icon, Status } from '../components/ui.js';
 import { account, api, ApiError, signIn, signOut, syncState, type Me } from '../store/sync.js';
 import { t } from '../strings.js';
 
@@ -151,18 +155,31 @@ function Board({ me }: { me: Me }) {
 export function Family() {
   const a = account.value;
   return (
-    <main class="screen family">
-      <header class="lesson__top">
-        <button class="lesson__close" type="button" aria-label={t('family.back')} onClick={() => go({ name: 'home' })}>
-          <span aria-hidden="true">×</span>
-        </button>
-        <h1 class="h2">{a.state === 'user' ? a.me.family.name : t('home.family')}</h1>
-        <Icon name="user-multiple-accounts" size={32} />
-      </header>
+    <main class="screen screen--tabbed family">
+      {a.state === 'user' ? (
+        <header class="profile">
+          <Avatar name={a.me.name} large />
+          <div class="profile__who">
+            <h1 class="h2">{a.me.name}</h1>
+            <p class="caption">
+              {t('profile.family')}: {a.me.family.name} · {t('profile.login')}: {a.me.login}
+            </p>
+          </div>
+        </header>
+      ) : (
+        <header class="profile">
+          <Icon name={a.state === 'guest' ? 'login-1' : 'user-single-neutral-male'} size={48} />
+          <div class="profile__who">
+            <h1 class="h2">{a.state === 'guest' ? t('profile.guest') : t('tab.profile')}</h1>
+            {a.state === 'guest' && <p class="caption">{t('profile.guestHint')}</p>}
+          </div>
+        </header>
+      )}
       {a.state === 'unknown' && <Status state="wait">{t('family.loading')}</Status>}
       {a.state === 'offline' && <Status state="off">{t('family.offline')}</Status>}
       {a.state === 'guest' && <SignIn />}
       {a.state === 'user' && <Board me={a.me} />}
+      <AppStatus />
     </main>
   );
 }

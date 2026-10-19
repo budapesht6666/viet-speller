@@ -4,6 +4,7 @@ import './styles/app.css';
 import { render } from 'preact';
 import { App } from './app.js';
 import { boot } from './store/app.js';
+import { startPwa } from './store/pwa.js';
 import { startSync } from './store/sync.js';
 import { hideBoot } from './ui/motion.js';
 
@@ -32,6 +33,7 @@ const show = () => {
 const booted = boot().catch(() => undefined).then(show);
 // Сеть — после журнала: синхронизация дописывает события в уже прочитанный журнал.
 void booted.then(startSync);
+startPwa();
 
 void Promise.race([booted.then(() => document.fonts?.ready), CAP]).then(() => {
   show();

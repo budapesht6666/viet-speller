@@ -5,13 +5,16 @@ const stamp = Date.now().toString(36);
 
 async function register(page: Page, login: string, name: string, invite = '') {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Семья' }).click();
+  await page.getByRole('button', { name: 'Войти' }).click();
   await page.getByLabel('Логин (латиница)').fill(login);
   await page.getByLabel('Пароль (от 8 символов)').fill('long-password');
   await page.getByLabel('Имя в семейном рейтинге').fill(name);
   if (invite) await page.getByLabel('Код семьи').fill(invite);
   await page.locator('form').getByRole('button', { name: 'Регистрация' }).click();
   await expect(page.locator('.family__code')).toHaveText(/^[A-Z2-9]{6}$/);
+  // Вход виден на вкладке: имя вместо «Войти».
+  await expect(page.locator('.tabbar')).toContainText(name);
+  await expect(page.locator('.tabbar')).not.toContainText('Войти');
 }
 
 /** Проходит первый урок верными ответами. */
@@ -40,6 +43,7 @@ test('семья: регистрация, приглашение, рейтинг
   const phone1 = await browser.newPage();
   await phone1.addInitScript(fakeSpeech);
   await phone1.goto('/');
+  await phone1.getByRole('button', { name: 'Войти' }).click();
   await expect(phone1.getByText(/Прогресс только на этом телефоне/)).toBeVisible();
   await passFirstLesson(phone1);
   await register(phone1, `pavel-${stamp}`, 'Павел');
@@ -57,20 +61,20 @@ test('семья: регистрация, приглашение, рейтинг
   // Новый телефон Павла: вход — и пройденный урок на месте.
   const phone3 = await browser.newPage();
   await phone3.goto('/');
-  await phone3.getByRole('button', { name: 'Семья' }).click();
+  await phone3.getByRole('button', { name: 'Войти' }).click();
   await phone3.getByRole('radio', { name: 'Вход' }).click();
   await phone3.getByLabel('Логин (латиница)').fill(`pavel-${stamp}`);
   await phone3.getByLabel('Пароль (от 8 символов)').fill('long-password');
   await phone3.locator('form').getByRole('button', { name: 'Вход' }).click();
   await expect(phone3.locator('.family__code')).toHaveText(invite);
-  await phone3.getByRole('button', { name: 'На главную' }).click();
-  await expect(phone3.locator('.path__lesson').first()).toContainText('пройден');
   await expect(phone3.getByText('Прогресс в семье')).toBeVisible();
+  await phone3.getByRole('button', { name: 'Учёба' }).click();
+  await expect(phone3.locator('.path__lesson').first()).toContainText('пройден');
 });
 
 test('неверный пароль — понятная ошибка, а не тишина', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Семья' }).click();
+  await page.getByRole('button', { name: 'Войти' }).click();
   await page.getByRole('radio', { name: 'Вход' }).click();
   await page.getByLabel('Логин (латиница)').fill('nobody-here');
   await page.getByLabel('Пароль (от 8 символов)').fill('wrong-password');

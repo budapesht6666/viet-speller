@@ -7,7 +7,7 @@
 import { accuracy, dueItems, lessonGrades, type LessonState } from '@viet/core';
 import { lesson as lessonById } from '@viet/content';
 import { useState } from 'preact/hooks';
-import { useOnline } from './Home.js';
+import { useOnline } from '../components/AppStatus.js';
 import { Player } from './Player.js';
 import { lessonContext, reviewContext, stepsForLesson, stepsForReview } from '../lessons.js';
 import { recognitionBlocker } from '../speech/recognizer.js';

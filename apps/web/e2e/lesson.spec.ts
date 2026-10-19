@@ -57,6 +57,7 @@ test('первый урок: проходится, итог сохраняетс
 
   const first = page.locator('.path__lesson').first();
   await expect(first).toContainText('пройден');
+  await page.getByRole('button', { name: 'Успехи' }).click();
   await expect(page.locator('.stat__value').first()).toHaveText('1'); // серия дней
   await page.reload();
   await expect(page.locator('.path__lesson').first()).toContainText('пройден');

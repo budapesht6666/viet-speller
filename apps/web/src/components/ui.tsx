@@ -14,6 +14,15 @@ export function Icon({ name, size = 24, set = 'ui' }: { name: string; size?: num
   return <img class="icon" src={`/assets/${set}/${name}.svg`} width={size} height={size} alt="" aria-hidden="true" />;
 }
 
+/** Кружок с первой буквой имени — примета того, что человек вошёл. */
+export function Avatar({ name, large }: { name: string; large?: boolean }) {
+  return (
+    <span class={large ? 'avatar avatar--large' : 'avatar'} aria-hidden="true">
+      {[...name.trim()][0]?.toUpperCase() ?? '?'}
+    </span>
+  );
+}
+
 export type StatusState = 'ok' | 'wait' | 'off' | 'live';
 
 export function Status({ state, children }: { state: StatusState; children: ComponentChildren }) {
