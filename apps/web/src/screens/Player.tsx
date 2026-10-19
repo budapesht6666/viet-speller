@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { player, prefetch } from '../audio/samples.js';
 import { Icon, MicButton, Options, PlayButtons, Tiles, type OptionView } from '../components/ui.js';
 import { Listener, type ListenStatus } from '../speech/listen.js';
+import { logAttempt } from '../store/speech.js';
 import { t, type StringKey } from '../strings.js';
 import { pop } from '../ui/motion.js';
 
@@ -82,18 +83,28 @@ export function Player({ lessonId, steps, context, mic, onExit, onFinish }: Play
   const speak = () => {
     player.stop();
     setHeard('');
+    // Что услышано к концу попытки — в журнал распознавания. Попытки, где
+    // микрофон не дали или пропала сеть, туда не идут: движок их не слышал.
+    let last = '';
     listener.current.start({
       onText: (text) => {
+        last = text;
         setHeard(text);
         const judged = judgeSpeech(target, text);
-        if (judged) dispatch({ type: 'heard', outcome: judged.outcome });
+        if (judged) {
+          logAttempt(target.id, text);
+          dispatch({ type: 'heard', outcome: judged.outcome });
+        }
         return Boolean(judged);
       },
       onStatus: (s) => {
         setListen(s);
         if (s === 'blocked' || s === 'offline' || s === 'error') setMicLost(s);
       },
-      onMiss: () => dispatch({ type: 'not-heard' }),
+      onMiss: () => {
+        logAttempt(target.id, last);
+        dispatch({ type: 'not-heard' });
+      },
     });
   };
 

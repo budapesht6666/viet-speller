@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { normalize, stripTone, VI } from '@viet/core';
 import { describe, expect, it } from 'vitest';
-import { audioFile, item, items, lessons, scenarios, SPEEDS, topics, type Speed } from '../src/index.js';
+import { audioFile, item, items, lessons, scenarios, SPEEDS, topics, VOICE_SAMPLE, VOICES, type Speed } from '../src/index.js';
 
 const AUDIO_DIR = fileURLToPath(new URL('../../../apps/web/public/audio/', import.meta.url));
 const expressions = (i: (typeof items)[number]) => [i.vi, ...(i.alt ?? [])];
@@ -94,14 +94,21 @@ describe('уроки', () => {
 describe('озвучка', () => {
   const speeds = Object.keys(SPEEDS) as Speed[];
 
-  it('у каждого элемента есть образец обеих скоростей', () => {
-    const missing = items.flatMap((i) => speeds.filter((s) => !audioFile(i.vi, s)).map((s) => `${i.id} (${s})`));
+  // Голос человек выбирает в настройках, поэтому образец нужен каждым голосом.
+  const variants = VOICES.flatMap((voice) => speeds.map((speed) => ({ voice, speed })));
+
+  it('у каждого элемента есть образец каждым голосом в обеих скоростях', () => {
+    const missing = items.flatMap((i) => variants.filter((v) => !audioFile(i.vi, v.speed, v.voice)).map((v) => `${i.id} (${v.voice}, ${v.speed})`));
     // Нет образца — `npm run tts`.
     expect(missing).toEqual([]);
   });
 
+  it('пример голоса в настройках — элемент контента, у него есть образцы', () => {
+    expect(items.some((i) => i.vi === VOICE_SAMPLE)).toBe(true);
+  });
+
   it('файлы образцов лежат на месте', () => {
-    const missing = items.flatMap((i) => speeds.map((s) => audioFile(i.vi, s)).filter((f) => f && !existsSync(AUDIO_DIR + f)));
+    const missing = items.flatMap((i) => variants.map((v) => audioFile(i.vi, v.speed, v.voice)).filter((f) => f && !existsSync(AUDIO_DIR + f)));
     expect(missing).toEqual([]);
   });
 });

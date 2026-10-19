@@ -13,6 +13,7 @@ import { signal } from '@preact/signals';
 import type { ProgressEvent } from '@viet/core';
 import { markSent, mergeEvents, pendingOutbox, readSetting, writeSetting } from './db.js';
 import { events } from './app.js';
+import { sendSpeech } from './speech.js';
 
 export interface Me {
   id: string;
@@ -101,6 +102,9 @@ async function doSync(): Promise<void> {
       await writeSetting('syncCursor', since);
     } while (rest.length);
     syncState.value = { state: 'ok', at: new Date(), pending: 0 };
+    // Журнал распознавания — следом и молча: это диагностика, а не прогресс,
+    // и её отказ не должен выглядеть как «прогресс не отправился».
+    await sendSpeech((attempts) => api('/speech', { attempts })).catch(() => undefined);
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) account.value = { state: 'guest' };
     syncState.value = { state: e instanceof ApiError && e.status === 0 ? 'offline' : 'error', pending: outbox.length };

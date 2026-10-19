@@ -25,6 +25,9 @@
 пользуется: `LeaderboardModule` берёт `ProgressModule` ради журнала, а
 `AuthModule` — `UsersModule` и `FamilyModule`. `TalkModule` (ИИ-собеседник)
 берёт `ProgressModule`: словарь собеседника — из журнала человека.
+`SpeechModule` (журнал распознавания) не берёт ничего, кроме глобального
+`PrismaModule`: попытки — отдельная таблица, а не события прогресса, и
+отчёт считает по ним функция ядра `speechReport`.
 
 ## Провайдер и внедрение зависимостей — `@Injectable`, конструктор
 

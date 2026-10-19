@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { item, lessons } from '@viet/content';
+import { audioFile, item, lessons } from '@viet/content';
 import { fakeSpeech } from './fake-speech.js';
 
 /** Отвечает на текущий шаг верно. Возвращает false, когда урок кончился. */
@@ -71,7 +71,7 @@ test('урок с микрофоном: «повтори» и «скажи» з�
   const before = lessons.slice(0, lessons.findIndex((l) => l.id === 'numbers-1')).map((l) => l.id);
   await page.evaluate(async (ids) => {
     const db = await new Promise<IDBDatabase>((ok, fail) => {
-      const r = indexedDB.open('viet-speller', 1);
+      const r = indexedDB.open('viet-speller');
       r.onsuccess = () => ok(r.result);
       r.onerror = () => fail(r.error);
     });
@@ -92,6 +92,19 @@ test('урок с микрофоном: «повтори» и «скажи» з�
   expect(sessions).toBeGreaterThan(0);
   // Ни одной сессии без касания: на iPhone они глухие.
   expect(deaf).toBe(0);
+
+  // Каждая попытка — в журнале распознавания: что услышано и чей движок.
+  const attempts = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((ok, fail) => {
+      const r = indexedDB.open('viet-speller');
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => fail(r.error);
+    });
+    const req = db.transaction('speech').objectStore('speech').getAll();
+    return new Promise<Array<{ itemId: string; heard: string; engine: string }>>((ok) => (req.onsuccess = () => ok(req.result)));
+  });
+  expect(attempts).toHaveLength(sessions);
+  for (const a of attempts) expect(a).toMatchObject({ heard: item(a.itemId).vi, engine: 'apple' });
 });
 
 test('без микрофона урок не просит говорить', async ({ page }) => {
@@ -139,7 +152,7 @@ test('главная: только последняя открытая тема,
   const before = lessons.slice(0, lessons.findIndex((l) => l.id === 'numbers-1')).map((l) => l.id);
   await page.evaluate(async (ids) => {
     const db = await new Promise<IDBDatabase>((ok, fail) => {
-      const r = indexedDB.open('viet-speller', 1);
+      const r = indexedDB.open('viet-speller');
       r.onsuccess = () => ok(r.result);
       r.onerror = () => fail(r.error);
     });
@@ -157,4 +170,71 @@ test('главная: только последняя открытая тема,
   await expect(page.locator('.topics__item')).toHaveCount(3);
   await page.locator('.topics__item', { hasText: 'Алфавит и звуки' }).click();
   await expect(page.locator('.path__topic .eyebrow')).toHaveText('Алфавит и звуки');
+});
+
+test('настройки: голос выбирается на слух, запоминается и звучит в уроке', async ({ page }) => {
+  // В сборке WebKit для Windows нет AudioContext, образец играет <audio>, а
+  // его загрузку Playwright не видит. Поэтому запоминаем, что ему дали играть.
+  await page.addInitScript(() => {
+    const played: string[] = [];
+    (window as unknown as { __played: string[] }).__played = played;
+    HTMLMediaElement.prototype.play = function () {
+      played.push(this.src);
+      return Promise.resolve();
+    };
+  });
+  const played = () => page.evaluate(() => (window as unknown as { __played: string[] }).__played);
+  const file = (text: string) => `/audio/${audioFile(text, 'normal', 'vi-VN-NamMinhNeural')}`;
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Настройки' }).click();
+  await expect(page.getByRole('radio', { name: 'Женский голос' })).toHaveAttribute('aria-checked', 'true');
+
+  // Касание варианта сразу его озвучивает — образцом этого голоса.
+  await page.getByRole('radio', { name: 'Мужской голос' }).click();
+  await expect(page.getByRole('radio', { name: 'Мужской голос' })).toHaveAttribute('aria-checked', 'true');
+  await expect.poll(played).toEqual([expect.stringContaining(file('xin chào'))]);
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Настройки' }).click();
+  await expect(page.getByRole('radio', { name: 'Мужской голос' })).toHaveAttribute('aria-checked', 'true');
+
+  // В уроке — тот же голос: первый образец первого урока.
+  await page.getByRole('button', { name: 'Учёба' }).click();
+  await page.getByRole('button', { name: 'Начать первый урок' }).click();
+  await expect.poll(played).toEqual([expect.stringContaining(file(item(lessons[0]!.items[0]!).vi))]);
+});
+
+test('обновление базы телефона: журнал версии 1 переживает переход на версию 2', async ({ page }) => {
+  // База, как у семьи до журнала распознавания: создаётся на странице без приложения.
+  await page.goto('/icons/icon.svg');
+  await page.evaluate(async (lessonId) => {
+    const db = await new Promise<IDBDatabase>((ok, fail) => {
+      const r = indexedDB.open('viet-speller', 1);
+      r.onupgradeneeded = () => {
+        r.result.createObjectStore('events', { keyPath: 'id' });
+        r.result.createObjectStore('outbox', { keyPath: 'id' });
+        r.result.createObjectStore('settings');
+      };
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => fail(r.error);
+    });
+    const tx = db.transaction(['events', 'settings'], 'readwrite');
+    tx.objectStore('events').put({ id: 'old-1', at: new Date().toISOString(), seconds: 120, type: 'lesson-done', lessonId, grades: {}, accuracy: 1, mic: false });
+    tx.objectStore('settings').put(20, 'dailyGoal');
+    await new Promise((ok) => (tx.oncomplete = ok));
+    db.close();
+  }, lessons[0]!.id);
+
+  await page.goto('/');
+  await expect(page.locator('.path__lesson').first()).toContainText('пройден');
+  await expect(page.locator('.home__today')).toContainText('из 20');
+  const stores = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((ok) => {
+      const r = indexedDB.open('viet-speller');
+      r.onsuccess = () => ok(r.result);
+    });
+    return { version: db.version, stores: [...db.objectStoreNames].sort() };
+  });
+  expect(stores).toEqual({ version: 2, stores: ['events', 'outbox', 'settings', 'speech'] });
 });

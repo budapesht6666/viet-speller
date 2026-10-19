@@ -9,7 +9,7 @@ async function seedUntilMarket(page: Page) {
   const ids = lessons.slice(0, lessons.findIndex((l) => l.id === 'market-1') + 1).map((l) => l.id);
   await page.evaluate(async (ids) => {
     const db = await new Promise<IDBDatabase>((ok, fail) => {
-      const r = indexedDB.open('viet-speller', 1);
+      const r = indexedDB.open('viet-speller');
       r.onsuccess = () => ok(r.result);
       r.onerror = () => fail(r.error);
     });

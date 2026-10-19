@@ -89,7 +89,8 @@ function shuffle<T>(list: T[], random: () => number): T[] {
   return a;
 }
 
-const accepted = (i: Item) => [i.vi, ...(i.alt ?? [])];
+/** Всё, что засчитывается за элемент: основное выражение и `alt`. */
+export const accepted = (i: Item): string[] => [i.vi, ...(i.alt ?? [])];
 const syllables = (i: Item) => normalize(i.vi);
 
 /**

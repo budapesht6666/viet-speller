@@ -6,13 +6,13 @@
  *   node scripts/tts.mjs --from research/vi-probe-prompts.json --out research/audio
  *
  * Повторный запуск ничего не перегенерирует: файл с таким хешем уже лежит,
- * и квота (у ElevenLabs она есть) не тратится. В рантайме приложения синтеза
- * нет — файлы коммитятся, и тон все учат по одному образцу.
+ * и время не тратится. В рантайме приложения синтеза нет — файлы
+ * коммитятся, и тон учат по записанному образцу.
  *
  * Рядом с файлами пишется `manifest.json`: ключ `голос|скорость|текст` → имя
  * файла. Клиент ищет образец по ключу и не считает хеш сам.
  *
- * Движок пока один — edge-tts (Python-пакет `edge-tts`, бесплатно, без лимита).
+ * Движок один — edge-tts (Python-пакет `edge-tts`, бесплатно, без лимита).
  * **Текст передаётся файлом, а не в argv**: на Windows не-ASCII в аргументах
  * дочернего процесса ломается, а во вьетнамском не-ASCII почти каждый слог.
  */
@@ -157,14 +157,15 @@ async function probeJobs(from) {
 }
 
 /**
- * Задания контента: каждый элемент голосом приложения, в двух скоростях.
- * Контент берётся из собранного пакета (`npm run build:packages`): так
- * скрипт читает ровно то, что увидит приложение.
+ * Задания контента: каждый элемент каждым голосом приложения, в двух
+ * скоростях — голос человек выбирает в настройках. Контент берётся из
+ * собранного пакета (`npm run build:packages`): так скрипт читает ровно то,
+ * что увидит приложение.
  */
 async function contentJobs() {
-  const { items, SPEEDS, VOICE } = await import('@viet/content');
+  const { items, SPEEDS, VOICES: voices } = await import('@viet/content');
   const texts = [...new Set(items.map((i) => i.vi.normalize('NFC')))];
-  return texts.flatMap((text) => Object.values(SPEEDS).map((rate) => ({ text, voice: VOICE, rate })));
+  return texts.flatMap((text) => voices.flatMap((voice) => Object.values(SPEEDS).map((rate) => ({ text, voice, rate }))));
 }
 
 async function main() {

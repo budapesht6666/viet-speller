@@ -6,6 +6,7 @@
 
 import { computed, signal } from '@preact/signals';
 import { replay, type ProgressEvent } from '@viet/core';
+import { DEFAULT_VOICE, isVoice, type Voice } from '@viet/content';
 import { appendEvent, loadEvents, openStorage, readSetting, writeSetting, type Storage } from './db.js';
 
 export const storage = signal<Storage | 'pending'>('pending');
@@ -24,6 +25,9 @@ export const noMic = computed(() => now.value.getTime() < noMicUntil.value);
 /** Ежедневная цель в минутах: 5, 10 или 20. */
 export const GOALS = [5, 10, 20] as const;
 export const dailyGoal = signal<number>(10);
+
+/** Голос озвучки — у каждого свой, выбирается в настройках. Хранится на телефоне. */
+export const voice = signal<Voice>(DEFAULT_VOICE);
 
 export interface Summary {
   kind: 'lesson' | 'review';
@@ -47,12 +51,13 @@ export type Route =
   | { name: 'progress' }
   | { name: 'topics' }
   | { name: 'talk' }
-  | { name: 'family' };
+  | { name: 'family' }
+  | { name: 'settings' };
 
 /** Экраны с нижней панелью вкладок. Урок и итог идут без неё: там не отвлекаем. */
 export type TabName = 'home' | 'topics' | 'phrasebook' | 'progress';
-/** Профиль — не вкладка, но панель на нём есть: с неё и возвращаются. */
-export const TAB_NAMES: ReadonlySet<Route['name']> = new Set<Route['name']>(['home', 'topics', 'phrasebook', 'progress', 'family']);
+/** Профиль и настройки — не вкладки, но панель на них есть: с неё и возвращаются. */
+export const TAB_NAMES: ReadonlySet<Route['name']> = new Set<Route['name']>(['home', 'topics', 'phrasebook', 'progress', 'family', 'settings']);
 
 export const route = signal<Route>({ name: 'home' });
 
@@ -76,6 +81,9 @@ export async function boot(): Promise<void> {
   events.value = await loadEvents();
   noMicUntil.value = (await readSetting<number>('noMicUntil')) ?? 0;
   dailyGoal.value = (await readSetting<number>('dailyGoal')) ?? 10;
+  // Голос, которого больше нет в контенте, — значит голос по умолчанию, а не тишина.
+  const saved = await readSetting<string>('voice');
+  voice.value = isVoice(saved) ? saved : DEFAULT_VOICE;
 }
 
 export async function record(event: ProgressEvent): Promise<void> {
@@ -92,4 +100,9 @@ export function setNoMic(on: boolean): void {
 export function setDailyGoal(minutes: number): void {
   dailyGoal.value = minutes;
   void writeSetting('dailyGoal', minutes);
+}
+
+export function setVoice(next: Voice): void {
+  voice.value = next;
+  void writeSetting('voice', next);
 }

@@ -33,6 +33,7 @@ model User {
   family       Family   @relation(fields: [familyId], references: [id])
   createdAt    DateTime @default(now())
   events       Event[]
+  speech       SpeechAttempt[]
 }
 
 model Event {
@@ -51,4 +52,23 @@ model Event {
   receivedAt DateTime @default(now())
 
   @@index([userId, seq])
+}
+
+/// Попытка сказать в уроке: что услышал движок распознавания. Не прогресс,
+/// а диагностика — из неё отчёт отвечает, пишет ли движок тон и слышит ли
+/// слог (packages/core/src/speech.ts). Хранится сырой: правило поменяется —
+/// отчёт пересчитается.
+model SpeechAttempt {
+  /// UUID, выданный телефоном. Повторная отправка ничего не удваивает.
+  id         String   @id
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  /// Время попытки на телефоне.
+  at         DateTime
+  itemId     String
+  /// Что вернул движок. Пусто — не вернул ничего.
+  heard      String
+  /// apple | google | other — движки отвечают по-разному.
+  engine     String
+  receivedAt DateTime @default(now())
 }

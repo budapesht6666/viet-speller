@@ -4,6 +4,7 @@ import { Family } from './screens/Family.js';
 import { Home } from './screens/Home.js';
 import { Phrasebook } from './screens/Phrasebook.js';
 import { Progress } from './screens/Progress.js';
+import { Settings } from './screens/Settings.js';
 import { LessonScreen, ReviewScreen } from './screens/Sessions.js';
 import { Talk } from './screens/Talk.js';
 import { Topics } from './screens/Topics.js';
@@ -29,6 +30,8 @@ function Screen() {
       return <Topics />;
     case 'talk':
       return <Talk />;
+    case 'settings':
+      return <Settings />;
     default:
       return <Home />;
   }

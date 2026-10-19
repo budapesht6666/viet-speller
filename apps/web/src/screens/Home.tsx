@@ -1,7 +1,7 @@
 /**
  * «Учёба»: что пройти дальше, тренировка и одна тема — последняя открытая
- * или выбранная на вкладке «Темы». Статистика — на «Успехах», вход — кнопкой
- * справа сверху.
+ * или выбранная на вкладке «Темы». Статистика — на «Успехах», настройки и
+ * вход — кнопками справа сверху.
  */
 
 import { dayKey, dueItems, minutesOn, nextLesson, topicLevel, unlockedLessons } from '@viet/core';
@@ -9,7 +9,7 @@ import { lessons } from '@viet/content';
 import { player } from '../audio/samples.js';
 import { LessonBlockers } from '../components/AppStatus.js';
 import { Level } from '../components/Level.js';
-import { ProfileButton } from '../components/TabBar.js';
+import { ProfileButton, SettingsButton } from '../components/TabBar.js';
 import { Icon } from '../components/ui.js';
 import { dailyGoal, go, noMic, noMicUntil, now, progress, setNoMic } from '../store/app.js';
 import { openTopics, shownTopic } from '../store/path.js';
@@ -36,7 +36,10 @@ export function Home() {
     <main class="screen screen--tabbed home">
       <header class="home__hero home__title">
         <h1 class="display">{t('appName')}</h1>
-        <ProfileButton />
+        <div class="home__actions">
+          <SettingsButton />
+          <ProfileButton />
+        </div>
       </header>
 
       <LessonBlockers />

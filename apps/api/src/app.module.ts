@@ -13,6 +13,7 @@ import { ProgressModule } from './progress/progress.module.js';
 import { LeaderboardModule } from './leaderboard/leaderboard.module.js';
 import { AchievementsModule } from './achievements/achievements.module.js';
 import { TalkModule } from './talk/talk.module.js';
+import { SpeechModule } from './speech/speech.module.js';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { TalkModule } from './talk/talk.module.js';
     LeaderboardModule,
     AchievementsModule,
     TalkModule,
+    SpeechModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

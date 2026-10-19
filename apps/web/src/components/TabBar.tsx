@@ -8,6 +8,16 @@ import { account } from '../store/sync.js';
 import { t } from '../strings.js';
 import { Avatar, Icon } from './ui.js';
 
+/** Шестерёнка настроек — рядом с профилем, в шапке «Учёбы». */
+export function SettingsButton() {
+  return (
+    <button class="profile-btn settings-btn" type="button" onClick={() => go({ name: 'settings' })}>
+      <Icon name="cog-1" size={32} />
+      <span class="caption">{t('tab.settings')}</span>
+    </button>
+  );
+}
+
 /**
  * Вход и профиль. Видно, вошёл ли человек: гость видит «Войти», вошедший —
  * кружок со своей буквой и имя. Одна и та же иконка в обоих случаях не

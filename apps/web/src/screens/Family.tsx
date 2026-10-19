@@ -1,6 +1,6 @@
 /**
  * Профиль: вход, семья с кодом-приглашением, недельный рейтинг по минутам
- * практики и состояние приложения.
+ * практики, журнал распознавания и состояние приложения.
  *
  * Шапка сразу говорит, вошёл ли человек: имя и буква в кружке — вошёл,
  * «Вход» — нет. Та же примета — на вкладке внизу.
@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'preact/hooks';
 import { AppStatus } from '../components/AppStatus.js';
+import { SpeechReport } from '../components/SpeechReport.js';
 import { Avatar, Icon, Status } from '../components/ui.js';
 import { account, api, ApiError, signIn, signOut, syncState, type Me } from '../store/sync.js';
 import { t } from '../strings.js';
@@ -179,6 +180,7 @@ export function Family() {
       {a.state === 'offline' && <Status state="off">{t('family.offline')}</Status>}
       {a.state === 'guest' && <SignIn />}
       {a.state === 'user' && <Board me={a.me} />}
+      {a.state === 'user' && <SpeechReport />}
       <AppStatus />
     </main>
   );

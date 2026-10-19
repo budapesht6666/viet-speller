@@ -56,6 +56,9 @@ test('снимки', async ({ page }) => {
     await page.screenshot({ path: `${OUT}/${file}.png` });
   }
   await page.locator('.tabbar').getByRole('button', { name: 'Учёба' }).click();
-  await page.locator('.profile-btn').click();
+  await page.getByRole('button', { name: 'Настройки' }).click();
+  await page.screenshot({ path: `${OUT}/08-settings.png` });
+  await page.locator('.tabbar').getByRole('button', { name: 'Учёба' }).click();
+  await page.locator('.profile-btn:not(.settings-btn)').click();
   await page.screenshot({ path: `${OUT}/08-profile.png` });
 });

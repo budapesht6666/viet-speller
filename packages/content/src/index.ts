@@ -23,8 +23,8 @@ import { barber, barberItems, delivery, deliveryItems, laundry, laundryItems } f
 export { achievements } from './achievements.js';
 export { scenario, scenarios } from './scenarios.js';
 export type { Scenario } from './scenarios.js';
-export { audioFile, audioKey, SPEEDS, VOICE } from './audio.js';
-export type { Speed } from './audio.js';
+export { audioFile, audioKey, DEFAULT_VOICE, isVoice, SPEEDS, VOICE_SAMPLE, VOICES } from './audio.js';
+export type { Speed, Voice } from './audio.js';
 
 export const topics: Topic[] = [alphabet, tones, numbers, politeness, family, cafe, market, grab, time, home, doctor, bank, delivery, laundry, barber, leisure, smalltalk, central];
 

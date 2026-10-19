@@ -172,3 +172,39 @@ describe('ачивки', () => {
     expect(res.body.earned).not.toContain('streak-3');
   });
 });
+
+describe('журнал распознавания', () => {
+  const said = (itemId: string, heard: string, engine = 'apple') => ({ id: uuid(), at: new Date().toISOString(), itemId, heard, engine });
+  // Один вход на весь блок: вход ограничен по частоте (AUTH_LIMIT).
+  let p: ReturnType<typeof request.agent>;
+  beforeAll(async () => {
+    p = request.agent(app.getHttpServer());
+    await p.post('/api/auth/login').send({ login: 'pavel', password: 'long-password' }).expect(200);
+  });
+
+  it('без входа закрыт', async () => {
+    await request(app.getHttpServer()).post('/api/speech').send({ attempts: [] }).expect(401);
+    await request(app.getHttpServer()).get('/api/speech/report').expect(401);
+  });
+
+  it('приём идемпотентен, отчёт считает тем же кодом ядра', async () => {
+    // pol-cam-on — «cảm ơn»: два слога. Тон расходится во второй попытке.
+    const batch = [said('pol-cam-on', 'cảm ơn'), said('pol-cam-on', 'cám ơn'), said('pol-cam-on', ''), said('nope', 'x')];
+    expect((await p.post('/api/speech').send({ attempts: batch }).expect(200)).body).toEqual({ accepted: 4, duplicates: 0 });
+    expect((await p.post('/api/speech').send({ attempts: batch }).expect(200)).body).toEqual({ accepted: 0, duplicates: 4 });
+
+    const res = await p.get('/api/speech/report').expect(200);
+    expect(res.body.engines).toHaveLength(1);
+    expect(res.body.engines[0]).toMatchObject({
+      engine: 'apple',
+      attempts: 3,
+      tone: { compared: 2, different: 1, verdict: 'collecting', examples: [{ expected: 'cảm ơn', heard: 'cám ơn' }] },
+      syllables: { multi: { attempts: 3, heard: 2 }, verdict: 'collecting' },
+    });
+  });
+
+  it('попытка неверной формы — 400', async () => {
+    await p.post('/api/speech').send({ attempts: [{ ...said('pol-cam-on', 'x'), engine: 'nokia' }] }).expect(400);
+    await p.post('/api/speech').send({ attempts: [{ ...said('pol-cam-on', 'x'), id: 'nope' }] }).expect(400);
+  });
+});
